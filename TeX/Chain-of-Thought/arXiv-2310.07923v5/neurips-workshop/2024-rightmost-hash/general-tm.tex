@@ -1,0 +1,52 @@
+\change{The relatively simple proof of \Cref{thm:lower-bound} relies on the slight architectural extension of multi-pre-norm. Without multi-pre-norm, it is still possible to simulate a Turing machine with linear overhead, though the overhead factor increases and the construction becomes more complicated:}
+
+\begin{restatable}[Proof in \Cref{sec:general-tm-proof}]{theorem}{generaltm} \label{thm:lower-bound-general}
+    Let $M$ be a Turing machine that, on input length $n$, runs for at most $t(n)$ steps (at most polynomial).
+    % Let $\pi$ be a positional encoding scheme that allows separating the first token.
+    % Then 
+    For any start-separable positional encoding,
+    there is a decoder-only saturated transformer that, on input $x$, computes $M(x)$ with $6 t(n) + 3 \abs{M(x)}$ decoding steps.
+\end{restatable}
+
+\change{The construction with multi-pre-norm is simpler and requires less overhead, which may suggest exploring this extension to transformers in practice.}
+
+% \ashish{see comments earlier about moving these caveats and architecture suggestions to earlier} \will{moved up}
+% As mentioned earlier, in contrast to \citet{perez2021attention}, \Cref{thm:lower-bound} does not assume nonstandard positional encodings. However, it does assume causally masked attention cannot attend to the current token. Interestingly, two minor architectural changes to the transformer could simplify details of the construction. First, having a linear layer before layer-norm would avoid the need for $\phi_z$ since it would be straightforward to preserve information in the residual connection that is not used in layer-norm computation. Second, having multiple projections of the state with different layer-norms at the beginning of the layer simplify computing rightmost hard attention. We take this as a weak sign that architectural changes along these lines \ashish{such as (multiple) selective layer-norm? giving it a name will help} would be worth exploring.
+
+%%%%%%%%%%%%%%%%%
+
+\section{General Turing Machine Simulation Proof} \label{sec:general-tm-proof}
+
+\generaltm*
+
+\begin{proof}
+    The high-level idea is similar to \Cref{thm:lower-bound} except that we will make two inefficient changes to the simulation to make the construction work without multi-pre-norm. Let $T = t(n)$ be the total number of decoding steps.
+    \begin{compactenum}
+        \item We left-pad the decoding steps with $3T$ no-op steps. \will{We should be able to implement this by counting as long as $t(n)$ is polynomial. Every $n$ steps, write a symbol $k_1$, then every $n$ $k_1$'s, write $k_2$, etc. Is there a cleaner way?}
+        
+        \item We intersperse 2 no-op steps between each step simulating a Turing machine step. This can be implemented by outputting a modular counter along with the standard output of each step.
+    \end{compactenum}
+    This means decoding step $i = n + 3T + 3i'$ will simulate Turing machine step $i'$. We now modify the inductive case from \Cref{thm:lower-bound} to accord with this construction.
+
+    \underline{Inductive Case}. We describe the construction of each step $i = n + 3T + 3i'$. We first reconstruct $h^\tau_i / i$ as for \Cref{thm:lower-bound}, with the extension that no-op steps contribute a move direction of 0. Thus, $h^\tau_i / i$ represents the position on tape $\tau$ at Turing machine step $i$.
+
+    \will{TODO: adapt input tape construction}
+
+    Next, we show a modified construction to retrieve the contents at $h^\tau_i$ for each non-input tape $\tau$. This time, we will use a different layer for each head, each with a single layer-norm.
+    W.l.o.g., finite state such as the output of each layer can be stored in the residual stream without appearing in the layer-norm hash because of the stateful extension of the hash (cf.~\Cref{sec:stateful-lnorm-hash}). This will be important for aggregating the layer outputs.
+
+    The layer-norm hash computed at position $i$ by layer $\tau$ from the residual stream is \ashish{describe how to get rid of $n$}
+    \begin{align*}
+        \phi^\tau_i
+        &\triangleq \phi(h^\tau_i / (i - n), 1/(i - n - 1)) = \phi(h^\tau_i, (i - n)/(i - n - 1)) \\
+        &= \phi ( h^\tau_i, c_i), \quad \textrm{where} \; c_i \triangleq \frac{i - n}{i - n - 1} = \frac{3T + 3i}{3T + 3i - 1} = \frac{T + i}{T + i - 1/3}.
+    \end{align*}
+    We attend with query $\phi^\tau_i$, key $\phi^\tau_j$, and value $[\delta_j]_{2 + \tau}$.
+    For any $j \leq i \leq T$, we have $T + j > \frac{T + i}{2}$. Thus, $c_j < c_{i/2}$. \will{check}
+    The preconditions of \Cref{lem:rightmost-lnorm} are met, so attention is maximized for the largest $j < i$ such that $h^\tau_i = h^\tau_j$. The head thus retrieves $\gamma^\tau_i$: the most recent update written to tape $\tau$ at position $h^\tau_i$. \will{Is it okay that $c_t$ has $n + 3T$ in num/denom? rather than just $3t/(3t - 1)$?}
+
+    We now have the state and layer outputs stored in the residual stream.
+    Following \Cref{thm:lower-bound}, we compute $\delta_{i-n} = \delta(q_i, \gamma^0_i, \ldots, \gamma^{k + 1}_i)$ using a feedforward network and output it, completing the inductive step.
+
+    \will{Describe how to reconstruct output}
+\end{proof}

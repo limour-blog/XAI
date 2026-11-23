@@ -1,0 +1,343 @@
+\begin{figure*}[ht]
+    \begin{centering}
+    \begin{tikzpicture}
+        \pgfplotsset{footnotesize,samples=10}
+        \begin{groupplot}[
+            group style = {group size = 4 by 1, horizontal sep = 50pt},
+            width = 3.7cm,
+            height = 3.7cm]
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{Training compute vs.}\\ \textbf{model size}},
+                legend style={at={(-0.12,1.4)},anchor=south},
+                xmode=log,
+                ymode=log,
+                xmin=0.2, xmax=300,
+                xtick={0.1, 1, 10, 100, 1000},
+                xticklabels={ ,1B,10B,100B,},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Model parameters},
+                ylabel={Training FLOPs},
+                ytick={1e21, 1e22, 1e23, 1e24},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.35,0.5)},anchor=south},
+                title style={font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchbeige,
+                    mark=triangle*,
+                    mark size=2.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (0.417, 7.9e20)
+                    (1.4,	2.6e21)
+                    (7.1,	8.5e21)
+                    (70,    5.6e23)
+                    };
+                \addplot[
+                    color=jweigreen,
+                    mark=diamond*,
+                    mark size=2.3pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (0.417, 7.5e20)
+                    (1.4,   2.5e21)
+                    (7.1,   1.3e22)
+                    (280,   5.5e23)
+                    };
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{WikiText103 ppl\ vs.} \\ \textbf{training compute}},
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=3e19, xmax=3e24,
+                ymin=4.5, ymax=23,
+                y dir=reverse,
+                xtick={1e20, 1e22, 1e24},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Training FLOPs},
+                ylabel={WikiText103 ppl},
+                ytick={20, 15, 10, 7, 5},
+                yticklabels={20, 15, 10, 7, 5},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchbeige,
+                    mark=triangle*,
+                    mark size=2.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (7.9e20, 18.9)
+                    (2.6e21, 13.64)
+                    (8.5e21, 10.73)
+                    (5.6e23, 7.2)
+                    };
+                \addplot[
+                    color=jweigreen,
+                    mark=diamond*,
+                    mark size=2.3pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (7.5e20, 19.48)
+                    (2.5e21, 14.29)
+                    (1.3e22, 10.81)
+                    (5.5e23, 8.12)
+                    };
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{WikiText103 ppl vs.} \\ \textbf{model size}},
+                legend style={at={(1.05,0.8)},anchor=west,draw=none},
+                xmode=log,
+                ymode=log,
+                xmin=0.2, xmax=300,
+                ymin=4.5, ymax=23,
+                y dir=reverse,
+                xtick={0.1, 1, 10, 100, 1000},
+                xticklabels={ ,1B,10B,100B,},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Model parameters},
+                ylabel={WikiText103 ppl},
+                ytick={20, 15, 10, 7, 5},
+                yticklabels={20, 15, 10, 7, 5},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchbeige,
+                    mark=triangle*,
+                    mark size=2.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (0.417, 18.9)
+                    (1.4,	13.64)
+                    (7.1,	10.73)
+                    (70,    7.2)
+                    };
+                \addplot[
+                    color=jweigreen,
+                    mark=diamond*,
+                    mark size=2.3pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (0.417, 19.48)
+                    (1.4,   14.29)
+                    (7.1,   10.81)
+                    (280,   8.12)
+                    };
+        \end{groupplot}
+    \end{tikzpicture}
+    \\ \vspace{3mm} 
+    
+    \begin{tikzpicture}
+        \pgfplotsset{footnotesize,samples=10}
+        \begin{groupplot}[
+            group style = {group size = 4 by 1, horizontal sep = 50pt},
+            width = 3.7cm,
+            height = 3.7cm]
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{MMLU}},
+                legend style={at={(-0.12,1.4)},anchor=south},
+                xmode=log,
+                xmin=3e19, xmax=3e24,
+                ymin=-3, ymax=103,
+                xtick={1e20, 1e22, 1e24},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Training FLOPs},
+                ylabel={Accuracy (\%)},
+                ytick={0, 20, 40, 60, 80, 100},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.35,0.5)},anchor=south},
+                title style={font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchbeige,
+                    mark=triangle*,
+                    mark size=2.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (7.9e20,	25.5)
+                    (2.6e21,	24.7)
+                    (8.5e21,	27.9)
+                    (5.6e23,   67.4)
+                    };
+                \addplot[
+                    color=jweigreen,
+                    mark=diamond*,
+                    mark size=2.3pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (7.5e20,  25.7)
+                    (2.5e21,  27.3)
+                    (1.3e22,  29.5)
+                    (5.5e23,  60.0)
+                    };
+                \addplot[
+                    color=frenchrose,
+                    mark=square,
+                    no markers,
+                    dashed,
+                    line width=1.3pt,
+                    ]
+                    coordinates {
+                    (1e19,   25)
+                    (1e25,  25)
+                    };
+                    
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{MMLU}},
+                legend style={at={(0.5,-0.75)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},/tikz/column 4/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                xmin=0.2, xmax=300,
+                ymin=-3, ymax=103,
+                xtick={0.1, 1, 10, 100, 1000},
+                xticklabels={ ,1B,10B,100B,},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Model parameters},
+                ylabel={Accuracy (\%)},
+                ytick={0, 20, 40, 60, 80, 100},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchbeige,
+                    mark=triangle*,
+                    mark size=2.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (0.417,	25.5)
+                    (1.4,	24.7)
+                    (7.1,	27.9)
+                    (70,   67.4)
+                    };
+                    \addlegendentry{Chinchilla}
+                \addplot[
+                    color=jweigreen,
+                    mark=diamond*,
+                    mark size=2.3pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (0.417,  25.7)
+                    (1.4,  27.3)
+                    (7.1,  29.5)
+                    (280,  60.0)
+                    };
+                    \addlegendentry{Gopher}
+                \addplot[
+                    color=frenchrose,
+                    mark=square,
+                    no markers,
+                    dashed,
+                    line width=1.3pt,
+                    ]
+                    coordinates {
+                    (0.1,   25)
+                    (1000,  25)
+                    };
+                    \addlegendentry{Random}
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{MMLU}},
+                legend style={at={(-0.12,1.4)},anchor=south},
+                xmode=log,
+                xmin=4.5, xmax=23,
+                ymin=-3, ymax=103,
+                x dir=reverse,
+                axis x line*=bottom,
+                axis y line*=left,
+                xtick={20, 15, 10, 7, 5},
+                xticklabels={20, 15, 10, 7, 5},
+                xlabel={WikiText103 ppl},
+                ylabel={Accuracy (\%)},
+                ytick={0, 20, 40, 60, 80, 100},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchbeige,
+                    mark=triangle*,
+                    mark size=2.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (18.96,	25.5)
+                    (13.64,	24.7)
+                    (10.73,	27.9)
+                    (7.16,   67.4)
+                    };
+                \addplot[
+                    color=jweigreen,
+                    mark=diamond*,
+                    mark size=2.3pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (18.96,  25.7)
+                    (13.64,  27.3)
+                    (10.73,  29.5)
+                    (7.16,  60.0)
+                    };
+                \addplot[
+                    color=frenchrose,
+                    mark=square,
+                    no markers,
+                    dashed,
+                    line width=1.3pt,
+                    ]
+                    coordinates {
+                    (1,   25)
+                    (30,  25)
+                    };
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{
+    Top row: the relationships between training FLOPs, model parameters, and perplexity (ppl) on WikiText103 \citep{merity2016pointer} for Chinchilla and Gopher.
+    Bottom row: Overall performance on the massively multi-task language understanding benchmark \citep[MMLU;][]{hendrycks2020measuring} as a function of training FLOPs, model parameters, and WikiText103 perplexity.
+    } 
+    \label{fig:wikitext}
+    \end{centering}
+\end{figure*}

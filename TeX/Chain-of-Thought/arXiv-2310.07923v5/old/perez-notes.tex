@@ -1,0 +1,7 @@
+\section{Strange aspects of \citet{perez2021attention}}
+
+\begin{enumerate}
+    \item They use a somewhat nonstandard score function \emph{within} the attention mechanism rather than exp. Not a major issue
+    \item Positional encodings include $i, 1/i, i/i^2$, which probably enables attending to target positions! 
+    \item They are writing out $q, \sigma, m$, rather than computing $\sigma$ by summing over previous $m$'s. Probably not a fundamental difference, since they are basically just computing $\sigma$ one step early.
+\end{enumerate}

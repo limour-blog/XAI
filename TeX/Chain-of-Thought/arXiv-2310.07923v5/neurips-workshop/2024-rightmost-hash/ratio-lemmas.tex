@@ -1,0 +1,226 @@
+\subsection{Stateful Layer-Norm Hash with Finite State} \label{sec:stateful-lnorm-hash}
+
+We consider the setting where we would like to use the layer-norm hash on part of the hidden state $h_i$, but $h_i$ also contains some additional finite state independent of the hash key that we would like to propagate to later layers. Formally, let $x$ be the hash value at token $i$ and $z \in [0, Z]$ be the additional finite state, encoded as an integer bounded by $Z$.
+
+\begin{definition}[$z$-stateful layer-norm hash]
+    Recall that, in the original layer-norm hash, $\phi(x/i, 1/i) = \lnorm(\mathbf v)$ where $\mathbf v \triangleq \langle x/i, 1/i, -x/i, -1/i \rangle$. For the $z$-stateful hash, we instead let $\mathbf v_z$ be the ``$\mathbf v$-hot'' vector of length $4Z$ with $\mathbf v$ at indices $4z + 1$ to $4(z + 1)$ and $0$ everywhere else. Then, the \emph{$z$-stateful layer-norm hash} is $\phi_z(x/i, 1/i) \triangleq \lnorm (\mathbf v_z)$.
+\end{definition}
+
+\change{We can always compute the stateful layer-norm hash in place of the standard layer-norm hash as follows.
+Imagine $x, y$ are outputs of attention heads or constants, and the finite state $z$ is encoded as a one-hot vector $z_1, \ldots, z_Z$. We then map $x, y$ to a ``one-hot'' vector $\mathbf v = \langle 0, \ldots, x, y, -x, -y, \ldots, 0 \rangle$, where $x, y$ starts at $4z + 1$, via a simple linear transformation (essentially, table lookup) \will{Is this valid?}.
+Then, the next layer computes
+\begin{equation*}
+    \lnorm(\mathbf v) = \phi_z(x, y) .
+\end{equation*}
+}
+
+\begin{lemma} \label{lem:stateful-hash}
+    For all $Z \in \mathbb N$, there exists a linear transformation $\mathbf W$ such that,
+    for all $x \in \mathbb R$ and $i \in \mathbb N$,
+    \begin{equation*}
+        \mathbf W \phi_z(x/i, 1/i) = \phi(x/i, 1/i) .
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    The subvector of $\phi_z(x/i, 1/i)$ from $4z + 1$ to $4(z + 1)$ is $\phi(x/i, 1/i)$. All other entries are zeros.
+    We can recover $\phi$ from $\phi_z$ via a single linear transformation $\mathbf W$ that sums all elements of $\phi_z$ at offsets of $4$ to create a new vector of length $4$. 
+\end{proof}
+
+It also holds that the inner product over $\phi_z$'s, for fixed $z$, is equal to the inner product over $\phi$'s.
+\ashish{for concreteness, would be better to extend \Cref{lem:stateful-hash} to also include the transformation that recovers $z$.}
+Similarly to \Cref{lem:stateful-hash}, the state $z \in [0, Z]$ can be reconstructed from $\phi_z$ via a linear transformation that checks which entries are nonzero. The residual connection (before application of $\lnorm$) will similarly encode $z$.
+
+\subsection{Rightmost Hard Attention with Layer-Norm Hash} \label{sec:rightmost-lnorm-hash}
+
+% Here is a rough sketch of the ratio based reasoning I am thinking of:
+
+% \begin{enumerate}
+    % \item As before, let $\phi_x = \phi(x, 1)$, but let's only consider $x \in \R^+$, no negatives. Then, the information content of $\phi(x, y)$ is basically the same as that of the ratio $x/y$. (Insisting on no negatives as $\phi(-x, -y)$ would behave differently as a hash but would have the same ratio.)
+
+    % \item Lemma Z: ... max is $\geq q$.
+
+    % \item (DONE) Lemma A ($y''$ and $y'$ are on the \emph{same side} of $y$): Let $x, y, y', y'' \in \R^+$. If $y'' < y' \leq y$ or $y'' > y' \geq y$, then $\phi(x, y) \cdot \phi(x, y') > \phi(x, y) \cdot \phi(x, y'')$.
+
+    % ALTERNATIVE: For $x, y, z \in \R+^$ and $z \geq y$, $\phi(x, y) \cdot \phi(x, z)$ is a decreasing function of $z - y$.
+    
+    % NOT TRUE: $\phi(x, y) \cdot \phi(x, z)$ is an increasing function of $|y - z|$.
+
+    % \item Lemma B ($y''$ and $y'$ are on \emph{different sides} of $y$, ONLY one direction): Let $x, y, y', y'' \in \R^+$. If $y'' < y \leq y'$ and $y - y'' > y' - y$, then $\phi(x, y) \cdot \phi(x, y') > \phi(x, y) \cdot \phi(x, y'')$.
+
+    % \item Lemma C: For any decreasing function $c_j$ of $j$, the conditions of Lemma A are satisfied for $x = q, y = c_i, y' = c_j, y'' = c_{\tilde{j}}$ for any $\tilde j < j \leq i$.  This means that among the $q$'s that are matched, the dot product will be the highest for the rightmost match.
+
+    % \item Lemma D (rough, to be verified): For any \emph{sufficiently small (or some other adjective)} decreasing function $c_j$ of $j$ such as $c_j = 3j / (3j - 1)$, the conditions of Lemma B are satisfied for $x = q, y = c_i, y' = c_j, y'' = c_j x / x'$ for any $j < i$ and $x' \geq x + 1$. That is, $\phi(q, c_i) \cdot \phi(q, c_j) > \phi(x, c_i) \cdot \phi(x', c_j)$, where the last term follows from the invariant that $\phi(x', c_j) = \phi(x, c_j x / x')$. 
+
+    % \item Lemma E: for $j \geq i/2$, $\ell \geq 1$, and $c_j = mj / (mj-1)$ for any $m > 2$
+    % %, the best case for $q+\ell$ has a worse match to $(q, i)$ than the worst case for $q$ (which occurs for the smallest $j$, i.e., $i/2$).
+    % $$
+    % \max_{i/2 \leq j < i} \phi(q, c_i) \cdot \phi(q+\ell, c_j)
+    %     <
+    %     \min_{i/2 \leq j < i} \phi(q, c_i) \cdot \phi(q, c_j)
+    % $$
+    % \will{wlog prove for $q + 1$}
+    % To this end, we show that with $c_j = mj / (mj-1)$ and any $m > 2$ (??), the best case for $q+1$ is in fact $(q+1, i/2)$, and that it is worse than $(q, i/2)$. Also note that in this case, $q+\delta$ will always be worse than $q+1$ for any $j$ and any $\delta > 1$.
+% \end{enumerate}
+
+\begin{proposition}
+    \label{prop:theta}
+    Let $x, y, w, z \in \Rpos$. Let $\theta$ denote the angle between the two 2-dimensional vectors $\langle x, y \rangle$ and $\langle w, z \rangle$ in $\R^2$. Then $\phi(x, y) \cdot \phi(w, z) = \cos(\theta)$.
+\end{proposition}
+
+\begin{proof}
+    By the definition of $\phi$, we have:
+    \begin{align*}
+        \phi(x, y) \cdot \phi(w, z)
+          & = \frac{\langle x, y, -x, -y \rangle}{\sqrt{2(x^2 + y^2)}} \cdot \frac{\langle w, z, -w, -z \rangle}{\sqrt{2(w^2 + z^2)}} \\
+          & = \frac{2xw + 2yz}{\sqrt{2(x^2 + y^2)} \sqrt{2(w^2 + z^2)}} \\
+          & = \frac{xw + yz}{\sqrt{x^2 + y^2} \sqrt{w^2 + z^2}} \\
+          & = \frac{\langle x, y \rangle \cdot \langle w, z \rangle}{|| \langle x, y \rangle || \, || \langle w, z \rangle ||}
+    \end{align*}
+    This last quantity, by the geometric definition of dot product in Euclidean spaces, is $\cos(\theta)$.
+\end{proof}
+
+\begin{proposition}
+    \label{prop:dot-product-monotone}
+    Let $x, y, z \in \Rpos$. Then:
+    % If $z \geq y$ (or $z \leq y$), then $\phi(x, y) \cdot \phi(x, z)$ is a decreasing (increasing, resp.) function of $z$ and is $1$ if and only if $z = y$.
+    \begin{equation*}
+        \phi(x, y) \cdot \phi(x, z) =
+        \begin{cases*}
+            1 & \text{if\ } $z = y$ \\
+            \text{a decreasing function of\ } z & if $z \geq y$ \\
+            \text{a increasing function of\ } z & if $z \leq y$
+        \end{cases*}
+    \end{equation*}
+\end{proposition}
+
+\begin{proof}
+    By \Cref{prop:theta}, the dot product $\phi(x, y) \cdot \phi(x, z)$ is simply $\cos(\theta)$ where $\theta$ is the angle between the 2-dimensional vectors $\langle x, y \rangle$ and $\langle x, z \rangle$. Since both vectors have the same first dimension (namely, $x$), $\theta = 0$ (and hence $\cos(\theta) = 1$) precisely when $z = y$. Further, since $x, y, z$ are non-negative, $\theta$ increases as $z$ grows beyond $y$, which in turn decreases $\cos(\theta)$. It follows that, when $z \geq y$, the dot product is a decreasing function of $z$. The case where $z \leq y$ can be proved analogously.
+\end{proof}
+
+\begin{proposition} \label{prop:max}
+    Let $q \in \mathbb N, k \in \Rplus,$ and $c_i, c_j \in \Rpos$.
+    % with $c_j \neq 0$.
+    Then $\phi(q, c_i) \cdot \phi(k, c_j)$
+    has a unique local maximum w.r.t.~$k$ at $k = \frac{c_j}{c_i} q$.
+\end{proposition}
+\begin{proof}
+    The squared inner product can be expanded as
+    \begin{equation*}
+        \frac{(qk + c_i c_j)^2}{(q^2 + c_i^2)(k^2 + c_j^2)} .
+    \end{equation*}
+    We now maximize this with respect to $k$ by taking the derivative, ignoring the $q^2 + c_i^2$ factor that does not depend on $k$:
+    \begin{equation*}
+        \frac{\partial}{\partial k} \left( \frac{(qk + c_i c_j)^2}{k^2 + c_j^2} \right) = \frac{2 c_j (c_j q - c_i k) (c_i c_j + kq)}{(k^2 + c_j^2)^2} .
+    \end{equation*}
+    % With $c_j \neq 0$ and $k \geq 0$,
+    Given the ranges of $q, k, c_i,$ and $c_j$,
+    the only root of this corresponds to
+    \begin{align*}
+        c_j q - c_i k &= 0 \\
+        \implies k &= \frac{c_j}{c_i} q . \qedhere
+    \end{align*}
+\end{proof}
+
+Having established these basic facts about the layer-norm hash, we will prove that the layer-norm hash can be used for a kind of ``rightmost'' hard attention \citep{hao2022ac0}: given a query $q$ at step $i$ and previous keys $k_1, \ldots, k_{i-1}$, we would like to attend to the \emph{largest} $j$ such that $k_j = q$. We will show that, if $c_i$ is set properly, this is possible. \Cref{lem:at-least-q} and \Cref{lem:q-plus-one-is-worse} establish that $j$ with the maximum attention score will satisfy $k_j = q$. \Cref{lem:q-most-recent} then shows that larger values of $j$ will receive more attention. This implies that the largest $j$ satisfying $k_j = q$ will be retrieved, as stated in \Cref{lem:rightmost-lnorm}.
+
+\begin{lemma} \label{lem:at-least-q}
+    Let $q \in \mathbb N$ and $c_i, c_j \in \Rpos$.
+    % with $c_j \neq 0$.
+    Then,
+    \begin{equation*}
+        \argmax_{k \in \mathbb N} \big\{ \phi(q, c_i) \cdot \phi(k, c_j) \big\} \geq q .
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    By \Cref{prop:max}, for any $q, i, j$, the only real-valued local maximum of $\phi(q, c_i) \cdot \phi(k, c_j)$ w.r.t.~$k$ is when $k = k^* \triangleq (c_j/c_i) q$. 
+    Thus, the maximizer over $\mathbb N$ is at least  $\lfloor k^* \rfloor$
+    % \ashish{changed a bit, to account for the case when $k^*$ is an integer}.
+    % the greatest integer less than $k^*$.
+    Since $c_i$ is decreasing with $i$ and  $j < i$, it follows that $1 \leq c_j / c_i$. Thus, $q \leq k^*$. Since $q \in \mathbb N$, we have $q \leq \lfloor k^* \rfloor$. It follows that the maximizer over $\mathbb N$ is at least $q$.
+\end{proof}
+
+\begin{lemma}
+    \label{lem:q-plus-one-is-worse}
+    Let $\ell, i, j, q \in \mathbb{N}, \epsilon \in \Rpos,$ and $m \in \Rplus$. Let $\ell \geq 1, i \geq 4, q \leq i, i/2 \leq j < i, \eps \leq 1/3,$ and $c_j = j / (j - \epsilon)$. Then %\{\lceil i/2 \rceil, \ldots i-1\}$,
+    \begin{align}
+        \label{eq:q-plus-one-is-worse}
+        \max_j \big\{ \phi(q, c_i) \cdot \phi(q+\ell, c_j) \big\}
+        & \, < \, \min_j \big\{ \phi(q, c_i) \cdot \phi(q, c_j) \big\}.
+    \end{align}
+\end{lemma}
+
+\begin{proof}
+    For simplicity, let $i_{\min} \triangleq \lceil i/2 \rceil$. We first consider the right hand side of inequality (\ref{eq:q-plus-one-is-worse}) in the statement of the lemma. Since $c_j$ is a decreasing function of $j$, we can apply \Cref{lem:q-most-recent} to conclude that the dot product $\phi(q, c_i) \cdot \phi(q, c_j)$ is an increasing function of $j$. It is therefore minimized when $j$ takes the lowest allowed value, namely $i_{\min}$. Thus, the right hand side of inequality (\ref{eq:q-plus-one-is-worse}) is simply $\phi(q, c_i) \cdot \phi(q, c_{i_{\min}})$.
+
+    Now consider the left hand side. By the scale-invariance of $\phi$, we can rewrite $\phi(q+\ell, c_j)$ as $\phi(q, c_j \frac{q}{q+\ell})$. We will first show that $c_j \frac{q}{q+\ell} < c_i$. To this end, we have:
+    \[
+        c_j \frac{q}{q+\ell}
+          \leq c_j \frac{q}{q+1}
+          \leq c_j \frac{i}{i+1}
+          \leq c_{i_{\min}} \frac{i}{i+1}
+          = \frac{i_{\min}}{i_{\min}-\epsilon} \, \frac{i}{i+1}
+          \leq \frac{i/2}{i/2-\epsilon} \, \frac{i}{i+1}
+    \]
+    Since $\epsilon < 1/2$, it can be verified that this last quantity is strictly smaller than $c_i = i / (i - \epsilon)$ whenever $i \geq 2$ \ashish{is there a simple proof of this??}. We can now apply \Cref{prop:dot-product-monotone} with $x = q, y = c_i,$ and $z = c_j$ and use the $z \leq y$ case to conclude that the dot product $\phi(q, c_i) \cdot \phi(q, c_j \frac{q}{q+\ell})$ is an \emph{increasing} function of $c_j \frac{q}{q+\ell}$, and hence an increasing function of $c_j$. Since $c_j$ is a decreasing function of $j$, the maximum in the left hand side of inequality (\ref{eq:q-plus-one-is-worse}) is achieved when $j$ has the smallest allowed value, $i_{\min}$. In other words, the left hand side of inequality (\ref{eq:q-plus-one-is-worse}) is simply $\phi(q, c_i) \cdot \phi(q, c_{i_{\min}} \frac{q}{q+\ell})$.
+
+    At this point, proving the lemma reduces to showing that
+    \begin{align}
+        \label{eq:dot-product-at-imin}
+        \phi(q, c_i) \cdot \phi(q, c_{i_{\min}} \frac{q}{q+\ell})
+          & < \phi(q, c_i) \cdot \phi(q, c_{i_{\min}})
+    \end{align}
+    Note that $c_{i_{\min}} \frac{q}{q+\ell} < c_i < c_{i_{\min}}$, so we cannot directly use the monotonicity property from \Cref{prop:dot-product-monotone}. Instead, we will show that
+    \begin{align}
+        \label{eq:c_imin-is-closer}
+        c_i - c_{i_{\min}} \frac{q}{q+\ell}
+          & \geq c_{i_{\min}} - c_i
+    \end{align}
+    and argue that this is sufficient to prove inequality (\ref{eq:dot-product-at-imin}).
+
+    First, in order to show that inequality (\ref{eq:c_imin-is-closer}) holds, we rewrite it as
+    $2 c_i > c_{i_{\min}} \left(1 + \frac{q}{q+\ell}\right)$ and observe that it's sufficient to prove this for the smallest value of $\ell$, namely $1$. In other words, it suffices to have $c_i > c_{i_{\min}} \left( \frac{2q + 1}{2q + 2} \right)$. Since $\frac{2q + 1}{2q + 2}$ is an increasing function of $q$, it suffices to prove the inequality for the largest value of $q$, namely $i$. Additionally, $c_i = \frac{i}{i-\epsilon}$ and $c_{i_{\min}} = \frac{i_{\min}}{i_{\min}-\epsilon} \leq \frac{i/2}{i/2-\epsilon}$. It thus suffices to show:
+    \begin{align*}
+        \frac{i}{i-\epsilon} & > \frac{i/2}{i/2-\epsilon} \, \frac{2i+1}{2i+2} \\
+        (i - 2\epsilon) (2i + 2) & > (i - \epsilon) (2i + 1) \\
+        2i^2 + i (2 - 4\epsilon) - 4\epsilon & > 2i^2 + i (1 - 2\epsilon) - \epsilon \\
+        i (1 - 2\epsilon) & > 3\epsilon
+    \end{align*}
+    which can be rewritten as $i > \frac{3\epsilon}{1 - 2\epsilon}$. Since $\epsilon \leq 1/3$, the right hand side is at most 3, while the left hand size, by a precondition of the lemma, is at least $4$.
+
+    Second, to show that inequality (\ref{eq:c_imin-is-closer}) implies inequality (\ref{eq:dot-product-at-imin}), we again leverage the geometric interpretation of dot product in two dimensions and the fact that $\cos(\theta)$ is a decreasing function of $\theta$ for $\theta \in [0, \pi/2]$. By \Cref{prop:theta}, it suffices to show that the angle $\theta_{q+1}$ between the 2-dimensional vectors $\langle q, c_i \rangle$ and $\langle q, c_{i_{\min}} \frac{q}{q+\ell} \rangle$ is \emph{larger} than the angle $\theta_q$ between $\langle q, c_i \rangle$ and $\langle q, c_{i_{\min}} \rangle$. That is, $\theta_{q+1} > \theta_q$. Let $\delta \triangleq c_{i_{\min}} - c_i$. Consider the vector $\langle q, c_i - \delta \rangle$ and let $\theta_\delta$ be the angle between this vector and $\langle q, c_i \rangle$. By design, $\theta_\delta \leq \theta_{q+1}$. It therefore suffices to show that $\theta_\delta > \theta_q$, which we can rewrite as
+    \begin{align*}
+        \arctan\big(\frac{c_i}{q}\big) - \arctan\big(\frac{c_i - \delta}{q}\big)
+          & \, > \, \arctan\big(\frac{c_i + \delta}{q}\big) - \arctan\big(\frac{c_i}{q}\big)
+    \end{align*}
+    That this inequality holds follows immediately from three facts: (a) the two arguments of $\arctan$ on both sides are equally far apart (specifically, $\delta/q$ apart); (b) the arguments on the left are smaller than the corresponding arguments on the right; and (c) the $\arctan$ function is increasing and \emph{concave} (i.e., has a decreasing derivative) in the range under consideration. This concludes the proof that inequality (\ref{eq:c_imin-is-closer}) implies inequality (\ref{eq:dot-product-at-imin}).
+    
+    We have shown that inequality (\ref{eq:dot-product-at-imin}) holds, and therefore the lemma holds.
+    % ORIGINAL NOTES: \will{wlog prove for $q + 1$}
+    % To this end, we show that with $c_j = mj / (mj-1)$ and any $m > 2$ (??), the best case for $q+1$ is in fact $(q+1, i/2)$, and that it is worse than $(q, i/2)$. Also note that in this case, $q+\delta$ will always be worse than $q+1$ for any $j$ and any $\delta > 1$.
+\end{proof}
+
+\begin{lemma}
+    \label{lem:q-most-recent}
+    For $q, i, j \in \mathbb{N}$ with $j \leq i$ and any decreasing function $c_j$ of $j$, $\phi(q, c_i) \cdot \phi(q, c_j)$ is an increasing function of $j$.
+\end{lemma}
+
+\begin{proof}
+    By construction, $c_j \geq c_i$. Applying \Cref{prop:dot-product-monotone} with $x = q, y = c_i,$ and $z = c_j$ and using the $z \geq y$ case, it follows that the dot product $\phi(q, c_i) \cdot \phi(q, c_j)$ is a \emph{decreasing} function of $c_j$. Since $c_j$ itself is a decreasing function of $j$, the dot product is an increasing function of $j$.
+\end{proof}
+
+Combining all of the previous lemmas, we can obtain the main lemma used by the general Turing machine construction:
+
+\begin{lemma}[Main Lemma] \label{lem:rightmost-lnorm}
+    Let $q, k_1, \ldots k_{i-1} \in \mathbb{N}$
+    and \will{preconditions}. Then $\phi(q, c_i) \cdot \phi(k_j, c_j)$ is maximized w.r.t.~$j$
+    at the greatest $j < i$ such that $k_j = q$.
+\end{lemma}
+
+\begin{proof}
+    TODO
+\end{proof}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%

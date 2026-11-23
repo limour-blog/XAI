@@ -1,0 +1,185 @@
+\clearpage
+\subsection{Different metrics for generative tasks}\label{subsec:different-metrics}
+
+In \cref{subsec:potential_explanations} we asked whether the apparent emergent abilities on generative tasks were due to using a particular metric such as exact string match, which does not award partially correct sequences. 
+Here, we show three emergent generative BIG-Bench tasks using all evaluation metrics provided by BIG-Bench, which includes metrics such as BLEU, ROUGE, and BLEURT, that award partial credit for answers that do not exactly match the target.
+For all three tasks, the emergent behavior appears to be independent of which evaluation metric is used.
+Hence, we conclude that using exact string match instead of another evaluation metric that awards partial credit is not a complete explanation of emergence on generative tasks.
+Two emergent generative BIG-Bench tasks, word unscramble and repeat copy logic, are excluded here because exact match is the only most sensible evaluation metric for those tasks, which measure the ability to manipulate words in the input (and hence metrics like BLEU and ROUGE that give word-level partial credit are not valid).
+
+\input{emergent-few-shot-metrics}
+
+\subsection{BIG-Bench task analysis}\label{subsec:big-bench-task-analysis}
+
+BIG-Bench contains over 200 tasks, and each task has associated keywords identified by the authors who submitted the task (e.g., ``common sense'', ``multilingual'').
+Given this, we asked the question, which types of BIG-Bench tasks are more likely to be emergent (compared with scaling smoothly)? 
+For this analysis, we manually classified all 210 BIG-Bench tasks as thus far emergent or not.
+We used the definition of emergence given in \cref{sec:emergent-prompting}, which is that the task had near-random performance until a certain scale, after which performance increases to substantially above random (as opposed to smoothly increasing). 
+Because this definition is potentially subjective based on the definition of ``near-random'' (and any heuristic we decide on would encode these subjective biases), two co-authors of the paper worked together and agreed with confidence on all the tasks labeled as emergent.
+For full transparency, this set of annotations is listed in \cref{sec:big-bench-annotations}.
+
+In \cref{fig:keyword-tags}, we show the number of tasks that are emergent for each keyword in BIG-Bench.
+Furthermore, we stratify them by tasks that first emerged with LaMDA 137B or GPT-3 175B, as well as tasks that were not emergent until using PaLM models.
+The non-emergent tasks in this plot include either ``smoothly increasing'' tasks (performance predictably increased with model size) or ``flat'' tasks (all models achieved approximately random performance).
+The remaining 40 BIG-Bench tasks not included in this chart did not fit into any of the above categories (e.g., too noisy due to very few eval examples, performance not correlated with model scale, etc.).
+
+Since the number of tasks per keyword varied substantially among keywords, and most keywords had less than twenty tasks, the ``most emergent'' keywords differed depending on whether we compare number of emergent tasks or percentage of emergent tasks per keyword.
+Tracking the absolute number of emergent tasks per keyword is problematic since it effectively just captures the most common keywords used across BigBench.
+We therefore tracked which keywords had the highest percent of emergent tasks, which were analogical reasoning, word sense disambiguation, truthfulness, social reasoning, and emotional understanding.
+While one might expect a priori that reasoning-related tasks would more likely to be emergent, only two of the top five tasks were reasoning and other keyword tags like logical reasoning and causal reasoning did not have a particularly high fraction of emergent tasks. 
+Moreover, arithmetic and mathematics had relatively low percentage of emergent tasks, which was unexpected since some of the earliest examples of emergence were on arithmetic \citep{brown2020language}.
+Overall, there are no clear trends for which types of tasks are most emergent.
+
+Finally, examining which keywords have the most tasks with flat scaling curves can also align with prior intuitions. 
+For instance, visual reasoning has the largest fraction of tasks with flat scaling curves (8/13), since language models are not designed for visual reasoning.
+Other categories with a large fraction of flat scaling curve tasks are non-language, repeated interaction, context length, computer code, and multi-step---all targeting weaknesses of large language models.
+These flat categories could be directions for future work in emergence in large language models.
+
+\input{big-bench-tasks}
+
+\clearpage
+\section{Further MMLU analysis}\label{sec:mmlu-analysis}
+
+In \cref{subsec:another-view}, we saw how emergent performance on MMLU for Gopher and Chinchilla could be viewed as a function of training FLOPs, model parameters, and WikiText103 perplexity.
+Because MMLU is actually a suite of 57 topics spanning four categories, we ask the question of whether certain categories were more conducive to emergence than others.
+This is similar in nature to the BIG-Bench analysis done in the prior section (\cref{subsec:big-bench-task-analysis}).
+One difference here is that the MMLU categories are mutually exclusive---each topic only has one category, whereas a single BIG-Bench task often had multiple keyword tags.
+However, there are only four categories and 57 tasks for MMLU (compared with 200+ tasks and dozens of keywords for BIG-Bench). 
+
+In \cref{fig:wikitext-extended}, we stratify the performance of MMLU among the four categories given in the benchmark (Humanities, STEM, Social Science, and other), and plot them with multiple $x$-axes: training FLOPs, model parameters, and WikiText103 perplexity.
+It is clear that Social Science and Humanities have the largest jump in performance from the second-largest to the largest model, and STEM has the smallest jump in performance.
+For a given $x$-axis (training FLOPs, model parameters, WikiText103 ppl), all four categories had similar plot shapes.
+This result is also summarized in \cref{fig:mmlu-stratification-summary}.
+
+
+\begin{figure}[ht]
+    \begin{centering}
+    \begin{tikzpicture}
+        \pgfplotsset{footnotesize,samples=10}
+        \begin{groupplot}[
+            group style = {group size = 1 by 1, horizontal sep = 42pt},
+            width = 5cm, 
+            height = 5cm]
+            \nextgroupplot[
+                align = center,
+                legend style={at={(1.2,0.5)},anchor=west,draw=none},
+                legend cell align={left},
+                xmin=-5, xmax=105,
+                ymin=-5, ymax=105,
+                xtick={0, 25, 50, 75, 100},
+                ytick={0, 25, 50, 75, 100},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Performance of \\ second-largest model},
+                ylabel={Performance of \\ largest model},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.15)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=blue,
+                    mark=o,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (26.7, 73.9)
+                    };
+                    \addlegendentry{Chinchilla: Humanities}
+                \addplot[
+                    color=jweigreen,
+                    mark=o,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (25.9, 54.3)
+                    };
+                    \addlegendentry{Chinchilla: STEM}
+                \addplot[
+                    color=violet,
+                    mark=o,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (29.0, 70.0)
+                    };
+                    \addlegendentry{Chinchilla: Other}
+                \addplot[
+                    color=orange,
+                    mark=o,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (30.2, 79.1)
+                    };
+                    \addlegendentry{Chinchilla: Social Science}
+                \addplot[
+                    color=blue,
+                    mark=triangle,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (28, 65.8)
+                    };
+                    \addlegendentry{Gopher: Humanities}
+                \addplot[
+                    color=jweigreen,
+                    mark=triangle,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (30.1, 48)
+                    };
+                    \addlegendentry{Gopher: STEM}
+                \addplot[
+                    color=violet,
+                    mark=triangle,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (31, 64)
+                    };
+                    \addlegendentry{Gopher: Other}
+                \addplot[
+                    color=orange,
+                    mark=triangle,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (31, 71.2)
+                    };
+                    \addlegendentry{Gopher: Social Science}
+                \addplot[
+                    color=black,
+                    mark=triangle,
+                    mark size=0pt,
+                    line width=1pt,
+                    dotted,
+                    ]
+                    coordinates {
+                    (25, -100)
+                    (25, 200)
+                    };
+                    \addlegendentry{Random performance (25\%)}
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{
+    Performance of largest Chinchilla and Gopher models (70B and 280B, respectively) compared with the second-largest model (7B parameters for both Chiinchlla and Gopher). 
+    The 7B Chinchilla and Gopher models perform around random (25\%) for all four categories.
+    So the categories that improved the most from 7B to 70B/280B are humanities and social science, whereas STEM (Science, Technology, Engineering, and Mathematics) improved the least.
+    } 
+    \label{fig:mmlu-stratification-summary}
+    \end{centering}
+\end{figure}
+
+\input{wikitext103-further}
+

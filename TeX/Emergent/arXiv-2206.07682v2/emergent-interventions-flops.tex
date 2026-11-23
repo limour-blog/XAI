@@ -1,0 +1,213 @@
+\begin{figure}[ht]
+    \begin{centering}
+    \begin{tikzpicture}
+        \pgfplotsset{footnotesize,samples=10}
+        \begin{groupplot}[
+            group style = {group size = 4 by 1, horizontal sep = 42pt},
+            width = 4cm, 
+            height = 5cm]
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{(A) Math word} \\ \textbf{problems}},
+                legend style={at={(-0.12,1.4)},anchor=south},
+                xmode=log,
+                xmin=2.5e20, xmax=1e24,
+                ymin=-1, ymax=25,
+                xtick={1e21,1e22,1e23,1e24},
+                axis x line*=bottom,
+                axis y line*=left,
+                ylabel={GSM8K Accuracy (\%)},
+                ytick={0, 5, 10, 15, 20, 25},
+                yticklabels={0, 5, 10, 15, 20, 25},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.15)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=battleshipgrey,
+                    mark=*,
+                    mark size=1pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (4e20, 2.7)
+                    (1.7e21, 3.7)
+                    (6.8e21, 3.1)
+                    (1.2e23, 5.6)
+                    (5.54e23, 6.3)
+                    };
+                    \node[color=battleshipgrey,font=\tiny] at (axis cs: 1.5e23,2.3) {No chain \\ of thought};
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (4e20, 1)
+                    (1.7e21, 1.8)
+                    (6.8e21, 1.7)
+                    (1.2e23, 11.8)
+                    (5.54e23, 20.7)
+                    };
+                    \node[color=frenchblue,font=\tiny] at (axis cs: 3e22,18) {Chain of \\ thought};
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{(B) Instruction} \\ \textbf{following}},
+                legend style={at={(-0.12,1.4)},anchor=south},
+                xmode=log,
+                xmin=2.5e20, xmax=1e24,
+                ymin=28, ymax=72,
+                ytick={30, 40, 50, 60, 70},
+                axis x line*=bottom,
+                axis y line*=left,
+                ylabel={10 NLU task average},
+                xtick={1e21,1e22,1e23,1e24},
+                grid style=dashed,
+                x label style={at={(axis description cs:1.26,-0.15)},anchor=north,font=\normalsize},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=battleshipgrey,
+                    mark=*,
+                    mark size=1pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (4.08e20, 43.5)
+                    (1.72e21,   46.5)
+                    (6.8e21,   49.7)
+                    (1.2e23,  52.5)
+                    (5.5e23, 53.4)
+                    };
+                    \node[color=battleshipgrey,font=\tiny] at (axis cs: 1.4e23,46) {No \\ instruction \\ tuning};
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (4.08e20, 38.3)
+                    (1.72e21,   41.1)
+                    (6.8e21,   44.9)
+                    (1.2e23,  65.9)
+                    (5.5e23, 68.4)
+                    };
+                    \node[color=frenchblue,font=\tiny] at (axis cs: 0.8e22,65) {Instruction \\ tuning};
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{(C) 8-digit addition}},
+                legend style={at={(-0.12,1.4)},anchor=south},
+                xmode=log,
+                xmin=2e18, xmax=2e21,
+                ymin=-5, ymax=105,
+                xtick={1e19, 1e20, 1e21},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Model scale (training FLOPs)},
+                ylabel={Accuracy (\%)},
+                ytick={0, 20, 40, 60, 80, 100},
+                grid style=dashed,
+                x label style={at={(axis description cs:-0.3,-0.15)},anchor=north,font=\normalsize},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=battleshipgrey,
+                    mark=*,
+                    mark size=1pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.3e18, 1.5)
+                    (3.16e19, 16)
+                    (8.9e19, 17)
+                    (1.37e20, 24)
+                    (4.16e20, 23)
+                    (4.08e20, 25)
+                    (9.1e20, 33)
+                    };
+                    \node[color=battleshipgrey,font=\tiny] at (axis cs: 3e20,10) {No \\ scratchpad};
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.3e18, 0)
+                    (3.16e19,  7)
+                    (8.9e19,  50)
+                    (1.37e20,  100)
+                    (4.16e20,   100)
+                    (4.08e20,   100)
+                    (9.1e20,     100)
+                    };
+                    \node[color=frenchblue,font=\tiny] at (axis cs: 1.7e19,90) {Scratchpad};
+            \nextgroupplot[
+                align = center,
+                title = {\textbf{(D) Calibration}},
+                legend style={at={(-0.12,1.4)},anchor=south},
+                xmode=log,
+                ymode=log,
+                y dir=reverse,
+                xmin=2.5e21, xmax=1.3e24,
+                ymin=0.6, ymax=20,
+                xtick={1e22,1e23,1e24},
+                ytick={0.001, 0.01, 0.1, 1},
+                axis x line*=bottom,
+                axis y line*=left,
+                ylabel={\% ECE (log-scale, decreasing)},
+                ytick={1, 10, 100},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.15)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=battleshipgrey,
+                    mark=*,
+                    mark size=1pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (4e21, 13.9)
+                    (1.5e22, 7.9)
+                    (6.1e22, 2.8)
+                    (2.6e23, 1.8)
+                    };
+                    \node[color=battleshipgrey,font=\tiny] at (axis cs: 1e22,4) {Letter \\ choices};
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=2pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (4e21, 10.9)
+                    (1.5e22, 9.1)
+                    (6.1e22, 8.9)
+                    (2.6e23, 1.0)
+                    };
+                    \node[color=frenchblue,font=\tiny] at (axis cs: 8e22,1) {T/F};
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{
+    Specialized prompting or finetuning methods can be emergent in that they do not have a positive effect until a certain model scale.
+    A: \citet{wei2022chain}.
+    B: \citet{wei2021finetuned}.
+    C: \citet{nye2021show}.
+    D: \citet{kadavath2022language}.
+    An analogous figure with number of parameters on the $x$-axis instead of training FLOPs is given in \cref{fig:emergent-interventions-params}.
+    The model shown in A-C is LaMDA \citep{thoppilan2022lamda}, and the model shown in D is from Anthropic.
+    } 
+    \label{fig:emergent-interventions}
+    \end{centering}
+\end{figure}

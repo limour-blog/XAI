@@ -1,0 +1,62 @@
+The idea for simulating finite automata can be extended to simulate more general counter automata \citep{minsky1961recursive,fischer1966turing,merrill2021linguistic}. Counter automata are finite automata extended with integer-valued counter registers, which can be incremented, and decremented, and used to inform output and state transitions. We defer a formal definition and proof the following to \Cref{app:counter-automata}:
+
+\begin{theorem}
+    A transformer decoder with $t(n)$ CoT steps can simulate the state sequence of a $k$-counter machine for $t(n)$ steps.
+\end{theorem}
+
+Because a $k$-counter machine can simulate a Turing machine with doubly exponential time overhead \citep[][Theorem 1]{minsky1961recursive}, we get that a transformer with a very large number of steps can simulate a Turing machine:
+
+\begin{corollary} \label{thm:counter-automata}
+    A transformer with chain of thought can simulate a Turing machine with doubly exponential blowup in the number of steps:
+    \begin{equation*}
+        \TIME(\log \log t(n)) \subseteq \CoT(t(n)) .
+    \end{equation*}
+\end{corollary}
+
+% APPENDIX BELOW
+
+\section{Counter Automata} \label{app:counter-automata}
+
+In this section, we extend the simulation construction for finite automata to show how a transformer with CoT can simulate a $k$-counter machine \citep{fischer1966turing}. Classically, for $k > 1$, the $k$-counter machine is Turing-complete, though it may take doubly exponentially long to simulate a Turing machine compared to the original run time \citep[][Theorem 1]{minsky1961recursive}.
+
+A $k$-counter machine is a finite-state machine extended with $k$ counter registers. Formally, it is a tuple $\langle \Sigma, b, Q, q_0, \delta, F, k \rangle$ where all entries have the same definition as for Turing machines, except:
+\begin{compactenum}
+    \item $\delta$ is now a function of the form:
+    \begin{equation*}
+        Q \times (\Sigma \cup \{b\}) \times \{0, 1\}^k \to Q \times \{{\pm}1, {+}0 \}^k .
+    \end{equation*}
+    The second element in the result represents a function $\mathbb Z \to \mathbb Z$ in the natural way. \will{We can probably also simulate ${\times}0$, which could be useful because it might provide exponential speed up in some cases (don't have to decrement integer counters)}
+    \item $k$ is a fixed-size integer specifying the number of counter registers.
+\end{compactenum}
+
+We define computation with a $k$-counter machine on an input $\sigma \in \Sigma^*$ as follows. A configuration is a finite state $q_i$ along with a register vector $\mathbf c_i \in \mathbb Z^k$.
+We start with the initial state $q_0$ and the register vector $\mathbf c_0 = \vec 0$. Let the function $z : \mathbb Z^k \to \{0, 1\}^k$ be the function that checks elementwise equality to $0$.
+Let $\sigma[j]$ be the $j$th token of $\sigma$ if $1 \leq j \leq \abs{\sigma}$ and $b$ otherwise.
+At each time step $i$, if $q_i \not\in F$, we recurrently update the configuration via:
+\begin{align*}
+    \langle q_{i+1}, u_i \rangle &= \delta(q_i, \sigma[c_{i,0}], z(\mathbf c_i)) \\
+    \mathbf c_{i+1} &= u_i(\mathbf c_i) .
+\end{align*}
+If $q_i \in F$ at any point, we accept $\sigma$. We define the language of the machine as the set of strings that it accepts.
+
+\begin{theorem}
+    A causal transformer with $t(n)$ chain-of-thought steps can simulate the state sequence of a $k$-counter machine for $t(n)$ steps.
+\end{theorem}
+
+\begin{proof}
+The key idea is to simulate one step of a counter machine with one step of a transformer. At each position $i$, we will output a token $\delta_i \in \Delta$ encoding the output of the transition function at that step. That is, $\delta_i$ can be identified with a tuple $\langle q_i, u_i \rangle \in Q \times \{ {\pm} 1, {+}0 \}^k$ encoding the current controller state and local counter update. We will prove by induction this is possible.
+
+In the base case of $i=1$, the previous token is not in $\Delta$, so we simply use the initial state $q_0$ and take the counter register to be $\vec 0$, meaning $z(\mathbf c_0) = \vec 1$. We can then compute $\delta_1 = \delta(q_0, \sigma_0, \vec 1)$ with a feedforward network.
+
+In the inductive case, we have by assumption that the sequence of generated chain-of-thought tokens is $\delta_1, \ldots, \delta_i$. Our goal is to compute and output $\delta_{i+1} = \delta(q_i, \sigma_i, z(\mathbf c_i))$, which first involves computing the three arguments to $\delta$:
+\begin{enumerate}
+    \item Obtain the current finite state $q_i$ from $\delta_i$ via simple projection.
+    \item Next, we will obtain the current input symbol $\sigma_i$. We apply \will{lem} to get a representation $1/i$ at CoT step $i$ as well as at the $i$th input token. We can then use a layer-norm hash construction to retrieve $\sigma_i$.
+    \item We can attend over this sequence uniformly where the values are $u_i$ (a simple projection of $\delta_i$). This head computes the current counter register value $\mathbf c_i / i$ because
+    \begin{equation*}
+        \mathbf c_i = \sum_{j=1}^i u_j(\mathbf c_i) .
+    \end{equation*}
+    We can can check $z(\mathbf c_i)$ (whether the counters are $0$) by checking whether the attention head output vector is $0$ at each element.
+\end{enumerate}
+At this point, we have the current finite state, current input token, and zeroness of the current counter registers, so we can compute and outputs $\delta_{i+1} = \delta(q_i, \sigma_i, z(\mathbf c_i))$.
+\end{proof}

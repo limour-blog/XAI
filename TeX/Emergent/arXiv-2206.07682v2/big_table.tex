@@ -1,0 +1,47 @@
+\newcommand{\smallbullet}[0]{\sbt\ \ }
+\begingroup
+\setlength{\tabcolsep}{3pt}
+\begin{table*}[ht]
+    \centering
+    \small
+    \caption{
+    List of emergent abilities of large language models and the scale (both training FLOPs and number of model parameters) at which the abilities emerge.
+    }
+    \begin{tabular}{l ccc l}
+    \toprule
+     & \multicolumn{2}{c}{Emergent scale} & & \\
+         \cmidrule(lr){2-3}
+     & Train.\ FLOPs & Params. & Model & Reference \\
+    \midrule
+    \underline{Few-shot prompting abilities} & & & \\
+    \smallbullet Addition/subtraction (3 digit) & 2.3E+22 & 13B & GPT-3 & \citet{brown2020language} \\
+    \smallbullet Addition/subtraction (4-5 digit) & 3.1E+23 & 175B & & \\
+    \smallbullet MMLU Benchmark (57 topic avg.) & 3.1E+23 & 175B & GPT-3 & \citet{hendrycks2020measuring} \\
+    \smallbullet Toxicity classification (CivilComments) & 1.3E+22 & 7.1B & Gopher & \citet{rae2021scaling} \\
+    \smallbullet Truthfulness (Truthful QA) & 5.0E+23 & 280B & & \\
+    \smallbullet MMLU Benchmark (26 topics) & 5.0E+23 & 280B & & \\
+    \smallbullet Grounded conceptual mappings & 3.1E+23 & 175B & GPT-3 & \citet{patel2021mapping} \\
+    \smallbullet MMLU Benchmark (30 topics) & 5.0E+23 & 70B & Chinchilla & \citet{hoffmann2022training} \\
+    \smallbullet Word in Context (WiC) benchmark & 2.5E+24 & 540B & PaLM & \citet{chowdhery2022palm} \\
+    \smallbullet Many BIG-Bench tasks (see \cref{sec:big-bench-annotations}) & Many & Many & Many & \citet{bigbench} \\
+    \midrule
+    \underline{Augmented prompting abilities} & & & \\
+    \smallbullet Instruction following (finetuning) & 1.3E+23 & 68B & FLAN  & \citet{wei2021finetuned} \\
+    \smallbullet Scratchpad: 8-digit addition (finetuning) & 8.9E+19 & 40M & LaMDA & \citet{nye2021show} \\
+    \smallbullet Using open-book knowledge for fact checking & 1.3E+22 & 7.1B & Gopher & \citet{rae2021scaling} \\
+    \smallbullet Chain-of-thought: Math word problems & 1.3E+23 & 68B & LaMDA & \citet{wei2022chain} \\
+    \smallbullet Chain-of-thought: StrategyQA & 2.9E+23 & 62B & PaLM & \citet{chowdhery2022palm} \\
+    \smallbullet Differentiable search index & 3.3E+22 & 11B & T5 & \citet{tay2022transformer} \\
+    \smallbullet Self-consistency decoding & 1.3E+23 & 68B & LaMDA & \citet{wang2022self} \\
+    \smallbullet Leveraging explanations in prompting & 5.0E+23 & 280B & Gopher & \citet{lampinen2022can} \\
+    \smallbullet Least-to-most prompting & 3.1E+23 & 175B & GPT-3 & \citet{zhou2022least} \\
+    \smallbullet Zero-shot chain-of-thought reasoning & 3.1E+23 & 175B & GPT-3 & \citet{kojima2022large} \\
+    \smallbullet Calibration via P(True) & 2.6E+23 & 52B & Anthropic & \citet{kadavath2022language} \\
+    \smallbullet Multilingual chain-of-thought reasoning & 2.9E+23 & 62B & PaLM & \citet{shi2022language} \\
+    \smallbullet Ask me anything prompting & 1.4E+22 & 6B & EleutherAI & \citet{arora2022ask} \\
+    \bottomrule
+    \end{tabular}
+    \label{tab:long-list}
+\end{table*}
+\endgroup
+   

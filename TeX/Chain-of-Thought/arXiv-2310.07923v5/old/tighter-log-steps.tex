@@ -1,0 +1,48 @@
+\subsection{Circuit Upper Bound with Log Steps}
+
+In fact, we can strength the characterization of $\CoT(\log n)$: we will show that it also falls in $\TC^0$. To get to the main result (\Cref{thm:tc0-upper-bound}), we first prove two key lemmas involving ``null padding'' of transformer decoders.
+
+To, begin we define null-padded decoder transformers. This is a decoder-only transformer model where the token that gets added to the input buffer after each step is a special null character $\#$, not the token outputted by the previous step of the transformer.
+
+Null-paddded transformers are relevant because normal transformer decoders can be simulated by them with an exponential blow up in the number of steps: 
+
+\begin{lemma} \label{lem:poly-padding-tc0}
+    For any polynomial $\poly$, a null-padded transformer decoder with at most $\poly(n)$ steps can be simulated in $\L$-uniform $\TC^0$.    
+\end{lemma}
+
+\begin{proof}
+    The original $n$ steps of the transformer encoding the input can be computed in $\L$-uniform $\TC^0$ by \citet{merrill2023parallelism}.
+
+    Each of the additional $t(n)$ decoding steps takes as input the position $i$ and, at each head, self-attends over the existing sequence of $n + i$ hidden states constructed at the previous layer.
+    Without loss of generality, we show how to simulate one layer of one of these decoding steps.
+    By the construction of \citet{merrill2023parallelism}, each attention head in the layer can be computed by an $\L$-uniform constant-depth $\TC^0$ circuit family.
+    Analogously, their construction can be used to simulate the feedforward network on top of the head outputs.
+
+    The whole network is then a finite-depth composition of these components, which can be stitched together analogously to \citet{merrill2023parallelism} in $\L$-uniform $\TC^0$.
+\end{proof}
+
+The analysis of standard transformers without additional decoding steps \citep{merrill2023parallelism} can be extended to show that such transformers are also in uniform $\TC^0$:
+
+\begin{lemma} \label{lem:null-padding}
+    A transformer decoder with $t(n)$ steps can be simulated by a null-padded transformer decoder with $\O(\exp(t(n)))$ steps and $1/i$ positional encodings.
+\end{lemma}
+
+\begin{proof}
+    Assume we can enumerate all possible configurations of $c \log n$ tokens sequentially. Within each block of $c \log n$ tokens, we verify whether the original decoder transformer would have computed the $c \log n$ output tokens given the $n$ input tokens and $c \log n$ extra tokens. With one additional step at the end, we then retrieve the final output value from the block that corresponded to the correct output sequence of the original decoder only transformer.
+
+    It remains to show that we can iterate all sequences of $c \log n$ tokens over $\Sigma$ in a null-padded transformer. We do this by using positional 
+
+    \will{Running into issues here. how does this work if we cannot output?}
+\end{proof}
+
+At this point, we can state the main result:
+
+\begin{theorem} \label{thm:tc0-upper-bound}
+    A transformer decoder with at most $c \log n$ steps can only recognize languages in $\L$-uniform $\TC^0$.  
+\end{theorem}
+
+\begin{proof}
+    Applying \Cref{lem:null-padding}, we see that a transformer decoder with $c \log n$ steps can be simulated by a null-padded transformer decoder with $\O(n^c)$ steps. By \Cref{lem:poly-padding-tc0}, such a transformer is in $\L$-uniform $\TC^0$. We conclude 
+\end{proof}
+
+From this result, we see that decoders with only a log number of steps obey the same limitations as transformers without any additional decoding steps. This is in contrast to a linear number of steps, where we saw that we were able to recognize all regular languages, which normal transformers cannot do. Thus, CoT will be unable to solve problems like graph connectivity or boolean formula evaluation unless more than a logarithmic number of decoding steps are allowed \citep{merrill2023parallelism}.

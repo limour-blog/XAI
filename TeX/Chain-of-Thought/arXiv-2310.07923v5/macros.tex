@@ -1,0 +1,77 @@
+\usepackage{amssymb}
+\usepackage{paralist}
+\usepackage{bbm}
+\usepackage{mathtools}
+\usepackage{tikz}
+\usepackage{natbib}
+\usepackage{cleveref}
+
+\newcommand{\eol}{\$}
+\renewcommand{\O}{\mathrm{O}}
+\newcommand{\tildeO}{\widetilde{\mathrm{O}}}
+\DeclareMathOperator{\sgn}{sgn}
+
+% Floor and ceiling functions.
+% \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+% \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+% Norms and stuff.
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
+% Argmin and argmax
+% \DeclareMathOperator*{\argmin}{argmin}
+% \DeclareMathOperator*{\argmax}{argmax}
+
+% Swap the definition of \abs* and \norm*, so that \abs
+% and \norm resizes the size of the brackets, and the 
+% starred version does not.
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+%
+\let\oldnorm\norm
+\def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
+\makeatother
+
+\newcommand{\draftcomment}[3]{{\textcolor{#3}{[#2: \emph{#1}]}}}
+% % \renewcommand{\draftcomment}[3]{}  % uncomment for submission
+\newcommand{\will}[1]{\draftcomment{#1}{\textsc{wm}}{orange}}
+\newcommand{\ashish}[1]{\draftcomment{#1}{\textsc{as}}{brown}}
+
+\let\polishL\L  % preserve the original meaning of \L before redefining it below
+
+\renewcommand\P{\mathsf P}
+\renewcommand\L{\mathsf L}
+\newcommand\NL{\mathsf{NL}}
+\newcommand{\TC}{\mathsf{TC}}
+\newcommand{\NC}{\mathsf{NC}}
+\newcommand\PSPACE{\mathsf{PSPACE}}
+\newcommand\FOM{\mathsf{FO(M)}}
+
+\newcommand{\CoT}{\mathsf{CoT}}
+\newcommand{\calT}{\mathcal T}
+\newcommand\TIME{\mathsf{TIME}}
+\newcommand\tildeTIME{\widetilde{\mathsf{TIME}}}
+\newcommand{\SPACE}{\mathsf{SPACE}}
+\newcommand{\CSL}{\mathsf{CSL}}
+
+\newcommand{\poly}{\mathrm{poly}}
+
+% Layer norm notation.
+\newcommand{\lnorm}{\mathsf{layer\_norm}}
+\newcommand{\mlnorm}{\mathsf{multi\_layer\_norm}}
+\newcommand{\slnorm}{\mathsf{proj\_layer\_norm}}
+\newcommand{\hash}{\phi}
+
+\usepackage{amsthm}
+\usepackage{thmtools}
+\usepackage{thm-restate}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemcorollary}{Corollary}[lemma]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}

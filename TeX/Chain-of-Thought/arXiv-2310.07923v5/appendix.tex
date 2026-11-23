@@ -1,0 +1,423 @@
+\section{Transformer Components}
+\label{sec:modules}
+
+This section \changeC{formally defines our generalizations of pre-norm and then} recalls the definition from \citet{merrill2023logic} for the components of the transformer layer.
+
+\subsection{Generalized Pre-Norm} \label{sec:prenorm}
+
+We assume a pre-norm \citep{xiong2020on} parameterization of the transformer for concreteness,
+% because
+\changeC{as}
+this is more standard in newer transformers.
+\change{As stated in \Cref{sec:transformers}, we \changeC{allow transformer sublayers to apply a linear projection before layer-norm. Concretely, we define $\slnorm(\mathbf v)$ as follows:
+
+\begin{definition}[Projected pre-norm]
+    \label{def:projected-pre-norm}
+    Let $\mathbf M : \mathbb R^m \to \mathbb R^m$ be a parameter matrix that projects $m$-dimensional vectors to $m$-dimensional vectors.
+    % Let $\mathbf{s} \in \{0,1\}^m$. The \emph{projected pre-norm} of $\mathbf{v} \in \R^m$ is defined as
+    % \begin{equation*}
+    %     \slnorm(\mathbf v) = \lnorm( \mathbf{s} \odot \mathbf{v} ) ,
+    % \end{equation*}
+    % where $\odot$ denotes elementwise product.
+    % Letting $\mathbf S = \mathrm{diag}(\mathbf s)$, we can equivalently write this as
+    \begin{equation*}
+        \slnorm(\mathbf v; \mathbf M) = \lnorm(\mathbf M \mathbf v) .
+    \end{equation*}
+\end{definition}
+
+We will omit the parameter $\mathbf M$ for convenience, instead writing $\slnorm(\mathbf v)$.
+
+% The vector $\mathbf s$ (or induced matrix $\mathbf S$) can be understood as trainable parameters of a projected pre-norm module. We also define 
+
+Our proofs also allow} multiple pre-norms of different projections of the hidden state for our lower-bound constructions.
+% However, the results would also hold with the original post-norm \citep{vaswani2017attention}.
+Concretely, we define $\mlnorm(\mathbf v)$ as follows.}
+
+% \ashish{similar to the note above, it seems better to me to define multi-pre-norm simply as multiple applications of projected pre-norm, i.e., with a 0-1 matrix; for practical purposes, this could be a real-valued matrix that we learn, but that's more than what we actually need for the simulation. Can we separate these two aspects?}
+% \will{Started standardizing/updating notation here. But a problem: $\mathbf S$ is square for projected pre-norm, but not necessarily square for multi-pre-norm. Projections in multi-pre-norm lose information}
+
+\begin{definition}[Multi-pre-norm]
+    \label{def:multi-pre-norm}
+    Let $m$ be divisible by $k$. %$k$ divide $m$.
+    For $1 \leq i \leq k$, let $\mathbf M_i : \mathbb R^m \to \mathbb R^{m / k}$ be a parameter matrix that projects $m$-dimensional vectors to $m/k$-dimensional vectors.
+    Let $\langle \cdot \rangle_{i=1}^k$ denote iterated concatenation.
+    The \emph{multi-pre-norm} of $\mathbf{v} \in \R^m$ is defined as
+    \begin{equation*}
+        \mlnorm(\mathbf v; \mathbf M_1, \ldots \mathbf M_k) = \left\langle \slnorm(\mathbf v; \mathbf M_i) \right\rangle_{i=1}^k .
+    \end{equation*}
+\end{definition}
+\changeC{As for projected pre-norm, we will omit the parameters $\mathbf M_1, \ldots \mathbf M_k$ for multi-pre-norm, instead writing $\mlnorm(\mathbf v)$.}
+
+\changeC{As noted earlier, projected pre-norm can simulate multi-pre-norm:
+
+\prenormequivalence*
+
+\begin{proof}
+    We will simulate a multi-pre-norm layer that takes as input
+    \begin{equation*}
+        \lnorm(\mathbf M_1 \mathbf v), \ldots, \lnorm(\mathbf M_k \mathbf v)
+    \end{equation*}
+    using only projected pre-norm layers. The idea is to use $k$ different projected pre-norm layers (one for each input layer norm).
+    At layer $i$, the layer takes as input $\lnorm(\mathbf M_i \mathbf v)$ and writes this to the residual stream.
+    Then, after these $k$ layers, a final layer reads as input
+    \begin{equation*}
+        \lnorm \left( \left\langle \lnorm( \mathbf M_i \mathbf v)\right\rangle_{i=1}^k \right) .
+    \end{equation*}
+    Since each vector in the concatenation has unit norm, this is equivalent to
+    \begin{equation*}
+        \frac{1}{\sqrt{k}} \left\langle \lnorm( \mathbf M_i \mathbf v)\right\rangle_{i=1}^k .
+    \end{equation*}
+    It follows that this layer receives essentially the same input as the original multi-pre-norm layer, up to a constant factor. The original weights for the layer can be multiplied by $\sqrt{k}$ to implement the same computation as the original layer. To make sure that $\sqrt{k}$ is exactly representable, we can pad the number of entries so that $k$ is a perfect square.
+\end{proof}
+}
+
+
+\subsection{Transformer Embeddings} \label{sec:embedding}
+
+For each position $1 \leq i \leq n$,
+the transformer embedding function represents token $\sigma_i \in \Sigma$ and its position $i$ with a vector.
+Let $\mathbf V$ be an embedding matrix of size $\abs{\Sigma} \times m$ where each row represents the embedding for some $\sigma$.
+Let $f : \mathbb N \to \mathbb D_p^m$ be computable in time $\O(\log n)$.
+Then,
+\begin{equation*}
+    e(\sigma_i, i) = \mathbf v_{\sigma_i} + f(i) .
+\end{equation*}
+
+\subsection{Self Attention} \label{sec:self-attention}
+
+The two components of the self attention block are $s$, the similarity function, and $v$, the value function.
+Let $\mathbf h_i$ be the hidden state at the previous layer and $\bar {\mathbf h}_i = \mlnorm(\mathbf h_i)$.
+We define similarity of keys and queries as follows:
+\begin{align*}
+    s(\mathbf h_i, \mathbf h_j) &= \exp \left( \frac{\mathbf q_i^\top \mathbf k_i}{\sqrt{m/h}} \right)
+    , \quad\quad \textrm{where} \;
+    \begin{array}{l}
+        \mathbf q_i = \mathbf W_q \bar {\mathbf h}_i + \mathbf b_q \\
+        \mathbf k_i = \mathbf W_k \bar {\mathbf h}_i + \mathbf b_k
+    \end{array} .
+\end{align*}
+Then the value function is defined $v(\mathbf h_i) = \mathbf W_h \bar {\mathbf h}_i + \mathbf b_h$.
+
+\subsection{Activation Block} \label{sec:feedforward}
+
+The activation function $f$ encapsulates the aggregation of the attention head outputs and the feedforward subnetwork of the transformer. $f$ takes as input attention head outputs $\mathbf a_{i,1}, \ldots, \mathbf a_{i,h} \in \mathbb D_p^{m/h}$ and the previous layer value $\mathbf h_i$.
+
+The first part of the activation block simulates the pooling part of the self-attention sublayer.
+The head outputs are first concatenated to form a vector $\mathbf a_i$, which is then passed through an affine transformation $(\mathbf W_o, \mathbf b_o) : \mathbb D_p^m \to \mathbb D_p^m$ followed by residual connections to form the sublayer output $\mathbf o_i \in \mathbb D_p^m$:
+\begin{equation*}
+    \mathbf o_i = \mathbf W_o \mathbf a_i + \mathbf b_o + \mathbf h_i .
+\end{equation*}
+
+The second part of the activation block first applies multi-layer-norm and then simulates the feedforward subnetwork to compute the next layer vector $\mathbf h'_i$.
+Let $\bar{\mathbf o}_i = \mlnorm(\mathbf o_i)$.
+Let $\sigma$ be a nonlinearity computable in linear time on its input (in the most standard transformer, ReLU). Then, for affine transformations $(\mathbf W_1, \mathbf b_1) : \mathbb D_p^m \to \mathbb D_p^w$ and $(\mathbf W_2, \mathbf b_2) : \mathbb D_p^w \to \mathbb D_p^m$, the feedforward subnetwork can be defined as:
+\begin{align*}
+    \mathbf h'_i = \mathbf W_2 \sigma(\mathbf W_1 \bar{\mathbf o}_i + \mathbf b_1) + \mathbf b_2 + \mathbf o_i .
+\end{align*}
+
+\section{Turing MAchines} \label{app:turing-machines}
+
+A Turing machine takes as input a string $\sigma \in \Sigma^*$.
+A \emph{configuration} of a Turing machine is a finite state $q$ along with the contents of an \emph{input} tape $c^0$, $k$ work tapes $c^1, \ldots, c^k$, and an output tape $c^{k+1}$. Finally, for each tape $\tau$, a configuration specifies a head position $h^\tau$.
+We start with the initial state $q_0$ and the input tape $c^0_0$ containing $\sigma$ starting at position $0$ with infinite $b$'s on each side, and $h^0_0 = 0$.
+All other tapes start containing all $b$'s and with their head at $0$. 
+At each time step $i$, if $q_i \not\in F$, we recurrently update the configuration by first computing:
+\begin{equation*}
+    \langle q_{i+1}, \gamma^1_i, \ldots, \gamma^{k+1}_i, d^0_i, \ldots, d^{k+1}_i \rangle = \delta(q_i, c^0_i[h^0_i], \ldots, c^{k+1}_i[h^{k+1}_i]) .
+\end{equation*}
+We then update tape $\tau$ by setting $c^\tau_{i+1}[h^j_i] = \gamma^j_i$ and keeping all other tape cells the same. We update the head position on tape $\tau$ according to
+% \change{$h^\tau_{i+1} = \max \{ h^\tau_i + d^\tau_i, 0 \}$}. \will{not necessary; two-sided}
+$h^\tau_{i+1} = h^\tau_i + d^\tau_i$.
+% 
+On the other hand, if $q_i \in F$, the Turing machine halts and \emph{outputs} the string of tokens on the output tape from the current head position on the left up to (but not including) the first $b$ on the right.
+% Thus, Turing machines parameterize functions $\Sigma^* \to \Sigma^*$.
+% 
+A Turing machine can also be viewed as a language recognizer if we set $\Sigma = \{0, 1\}$ and check if the first output token is $0$ or $1$.
+% constituting a language membership decision.
+
+%%%%%%%%%%%%%%%%%
+\section{Layer-Norm Hash} \label{sec:lnorm-proof}
+
+\lnormcanonical*
+
+\begin{proof}
+    Let $\mathbf v_x = \langle x/i, 1/i, -x/i, -1/i\rangle$.
+    % and $\mathbf v_k = \langle k/j, 1/j, -k/j, -1/j\rangle$.
+    % $\phi_q$ and $\phi_k$ are constructed with mean $0$,
+    $\mathbf v_x$ is constructed with mean $0$, so layer-norm reduces to RMS-norm \citep{zhang2019rms}. Thus,
+    \begin{align*}
+        \hash(x/i, 1/i)
+        &= \mathbf v_x / \norm{\mathbf v_x} \\
+        &= \mathbf v_x \cdot \frac{i}{\sqrt{2x^2 + 2}} \\
+        &= \frac{1}{\sqrt{2x^2 + 2}} \langle x, 1, -x, -1 \rangle \\
+        &= \phi(x, 1) %\qedhere
+    \end{align*}
+    which, by definition, is $\phi_x$.
+\end{proof}
+% 
+% By symmetry, we also have 
+% \begin{equation*}
+%     \hash(k/j) =  \frac{1}{\sqrt{2k^2 + 2}} \langle k, 1, -k, -1 \rangle .
+% \end{equation*}
+% Notably, these unit-norm vectors only depend on $q$ and $k$, not $i$ and $j$. We turn to considering their inner product $\hash(q/i) \cdot \hash(k/j)$:
+
+\lnormunique*
+
+\begin{proof}
+    % Following the notation and derivation from \Cref{lem:lnorm-canonical}, we have
+    \change{By the definition of layer-norm hash, we have}
+    \begin{align*}
+        \hash(q, 1) \cdot \hash(k, 1)
+        &= \frac{1}{\sqrt{2q^2 + 2}} \langle q, 1, -q, -1 \rangle \cdot \frac{1}{\sqrt{2k^2 + 2}} \langle k, 1, -k, -1 \rangle \\
+        &= \frac{2qk + 2}{\sqrt{(2q^2 + 2)(2k^2 + 2)}} \\
+        &= \frac{qk + 1}{\sqrt{(q^2 + 1)(k^2 + 1)}} .
+    \end{align*}
+    The inner product of unit-norm vectors is maximized at $1$.
+    In this case, we show that it achieves $1$ only when $q = k$, meaning that is the unique maximum:
+    \begin{align*}
+        1 &= \frac{qk + 1}{\sqrt{(q^2 + 1)(k^2 + 1)}} \\
+        (qk + 1)^2 &= (q^2 + 1)(k^2 + 1) \\
+        (qk)^2 + 2qk + 1 &= (qk)^2 + q^2 + k^2 + 1 \\
+        2qk &= q^2 + k^2 \\
+        0 &= (q - k)^2 .
+    \end{align*}
+    We conclude that $\hash_q \cdot \hash_k$ is maximized \change{(to $1$)} if and only if $q = k$.
+\end{proof}
+
+As the layer-norm hash is constructed to have mean 0, it does not require a fully general layer-norm implementation and can, in fact, be implemented with simplified RMS norm \citep{zhang2019rms}.
+
+% ==================
+
+%     W.l.o.g., consider the first component of the hash, which we denote $x_q$ and $x_{k_j}$, respectively, for each argument. This is fully general because the other arguments are monotonically increasing or decreasing with the first argument.
+%     By symmetry, let $\succ$ be $>$. Then $x_q > x_{k_j}$ for all $j$.
+%     Assume by way of contradiction that
+%     \begin{equation*}
+%         m x_q = \sum_{j=1}^m x_{k_j} .
+%     \end{equation*}
+%     We subtract away terms $2 \leq j \leq m$. Since $x_q > x_{k_j}$ for these terms, it follows that $x_q < x_{k_1}$, which is a contradiction.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% NO LONGER USED
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \section{Start-Separable Position Encodings} \label{sec:start-separable}
+
+% \startseparable*
+
+% \begin{proof}
+% If the positional encoding is start-separable, we can construct a transformer decoder that attends uniformly over the previous tokens and set the value to be $1$ at the initial token and $0$ otherwise. The output of this head will be $1/i$. We can then compose this transformer with a transformer that uses $1/i$ positional encoding to recognize $L$, which exists as a premise.
+% \end{proof}
+
+\section{Input Tape Retrieval via the Layer-Norm Hash} \label{sec:input-tape}
+
+We now describe an attention head that uses the layer-norm hash to read from the input tape in \Cref{thm:lower-bound}.
+Define a sequence $h_1, \ldots, h_{i-1}$, which represents Turing machine tape position in \Cref{thm:lower-bound}.
+
+We define the following layer-norm hash based quantity, which is instantiated in \Cref{thm:lower-bound} in a particular way:
+\begin{equation*}
+    \phi_i =
+    \begin{cases}
+        \phi(i, 1) & \textrm{if} \; 1 \leq i \leq n \\
+        \phi(h_i, 1) & \textrm{otherwise}.
+    \end{cases}
+\end{equation*}
+The attention head we construct can then be described as follows:
+\begin{compactitem}
+    \item Query: $\langle \phi_i, -1 \rangle$
+    \item Key: $\langle \phi_j, \mathbbm{1}[n < j] \rangle$
+    \item Value: $\mathbf v_j \triangleq \langle \phi_j, \sigma_j \rangle$
+\end{compactitem}
+Let $\mathbf{\bar v} \triangleq \langle \bar \phi, \bar \sigma \rangle$ be the head output.
+This head obeys the following properties:
+
+\begin{lemma} \label{lem:input-tape-iff}
+    Let $i > n$. Then, $1 \leq h_i \leq n$ if and only if $\bar \phi = \phi_i$.
+\end{lemma}
+
+\begin{proof}
+    We proceed by considering the two directions.
+
+    \par \underline{Forward Direction.}
+    The query-key inner product has two terms $\kappa^1_{ij} + \kappa^2_{ij}$.
+    By \Cref{lem:lnorm-unique}, $\kappa^1_{ij}$ is maximized either when $h^0_i = j$ (and $1 \leq j \leq n$) or when $h_i = h_j$ (and $n < j$). However, if $n < j$, the second term $\kappa^2_{ij} = 1$. Thus, the attention score is maximized uniquely when $j = h_i$, so the head retrieves $\mathbf{\bar v} = \langle \phi(h_i, 1), \sigma_{h_i} \rangle$. Thus, $\bar \phi = \phi(h_1, 1) = \phi_i$.
+
+    \par \underline{Backward Direction.}
+    We establish bidirectionality by proving the contrapositive. Assume that either $h_i < 1$ or $h_i > n$.
+    The head retrieves $\bar \phi = \frac{1}{\abs{M}} \sum_{j \in M} \phi(j, 1)$ for some $M \subseteq \{1, \ldots, n\}$.
+    It holds that, for all $1 \leq j \leq n$, $h_i < j$, or the other way around \changeC{(i.e., for all $1 \leq j \leq n$, $h_i > j$)}.
+    Thus, by \Cref{lem:unique-avg},
+    % \ashish{reorder lemmas to avoid this forward-reference? introducing D.1 just for that seems unnecessary}
+    $\bar \phi \neq \phi(h_i, 1) = \phi_i$.
+\end{proof}
+
+The following property also emerges from the proof of the forward direction in \Cref{lem:input-tape-iff}:
+
+\begin{lemma} \label{lem:input-tape-sigma}
+    Let $i > n$. Then, if $1 \leq h_i \leq n$, $\bar \sigma = \sigma_{h_i}$.
+\end{lemma}
+
+The backward direction in \Cref{lem:input-tape-iff} relies on the following lemma:
+
+\changeB{\begin{lemma} \label{lem:unique-avg}
+    Let $q \in \mathbb Z$ and $k_j \in \mathbb Z$ for $1 \leq j \leq m$.
+    Let $\succ \in \{<, >\}$.
+    If, for all $j$, $q \succ k_j$, then
+    \begin{equation*}
+        \phi_q \neq \frac{1}{m} \sum_{j=1}^m \phi_{k_j} .
+    \end{equation*}
+\end{lemma}}
+
+\changeB{\begin{proof}
+    Recall that $\phi_x = \phi(x, 1) \in \mathbb R^4$ has first element $x / \sqrt{2x^2 + 2}$, which we will denote as $z_x$.
+    Observe that $z_x$ is a monotonically increasing function of $x \in \mathbb R$.
+    Thus, $z_q \succ z_{k_j}$ for $1 \leq j \leq m$, which implies $z_q \succ \frac{1}{m} \sum_{j=1}^m z_{k_j}$,
+    from which the lemma conclusion follows.
+\end{proof}}    
+    % To see that $z_q \succ z_{k_j}$, we can consider:
+    % \begin{align*}
+    %     \frac{q}{\sqrt{2q^2 + 2}} \succ \frac{k_j}{\sqrt{2{k_j}^2 + 2}} \\
+    % \end{align*}
+
+\section{Rightmost Retrieval via the Layer-Norm Hash} \label{sec:ranking-term}
+
+We now describe an attention head that can attend to the rightmost token satisfying a certain property, capturing the construction in \Cref{thm:lower-bound} to retrieve the most recent write to a Turing machine work tape.
+Define a sequence $h_1, \ldots, h_{i-1}$, which represents Turing machine tape position in \Cref{thm:lower-bound}.
+As is natural for Turing machine tapes, we assume that if $h \neq h_i$ for all $i$, then it must be that $h \prec h_i$ for all $i$, where $\prec$ is fixed as either $>$ or $<$.
+
+Let $f(i)$ be a tie-breaking term that we will define later in \Cref{sec:tie-breaking}.
+We define two layer-norm hash quantities:
+\begin{align*}
+    \phi_i &\triangleq \phi(h_1 / i, 1/i) \\
+    \psi_i &\triangleq \phi(f(i), 1) .
+\end{align*}
+Recall that $e_1 = \langle 1, 0, 0, 0 \rangle$.
+Construct an attention head as follows:
+\begin{compactitem}
+    \item Query: $\langle \phi_i, e_1 \rangle$
+    \item Key: $\langle \phi_j, -\psi_j \rangle$
+    \item Value: $\mathbf v_j \triangleq \langle \phi_j, \delta_j \rangle$
+\end{compactitem}
+Let $\mathbf{\bar v} \triangleq \langle \bar \phi, \bar \delta \rangle$ be the head output.
+The following properties hold for such a head:
+
+\begin{lemma} \label{lem:ranked-exact-match-iff}
+    There exists $j < i$ such that $h_i = h_j$ if and only if $\bar \phi = \phi_i$.
+\end{lemma}
+
+\begin{proof}
+    We proceed by considering the two directions.
+
+    \par \underline{Forward Direction.}
+    The query-key inner product has two terms $\kappa^1_{ij} + \kappa^2_{ij}$.
+    By \Cref{lem:lnorm-unique}, the first term $\kappa^1_{ij}$ is maximized at 1 for each $j$ such that $h_i = h_j$. For $h_i \neq h_j$, $\kappa^1_{ij} < 1 - 1/(2i^4)$ by \Cref{lem:inexact-error}. The second component $\kappa^2_{ij}$ monotonically increases with $j$ and satisfies $\kappa^2_{ij} < f(i) < 1/(2i^4)$ by \Cref{lem:tie-breaker-is-small}.
+    Thus, the attention score is maximized for the largest $j < i$ such that $h^\tau_i = h^\tau_j$. Thus, $\mathbf{\bar v} = \mathbf v_j$ and $\bar \phi = \phi_j$ for this $j$, which means $\bar \phi = \phi_i$.
+
+    \par \underline{Backward Direction.}
+    We establish bidirectionality by proving the contrapositive. Assume there is no $j < i$ such that $h_i = h_j$.
+    Then $\bar \phi = \frac{1}{\abs{M}} \sum_{j \in M} \phi(h_j, 1)$ for some $M \subseteq \{1, \ldots, n\}$.
+    By assumption (top of \Cref{sec:ranking-term}), we have $h_j \prec h_i$ for all $j < i$.
+    It follows from \Cref{lem:unique-avg} that $\bar \phi \neq \phi(h_i, 1) = \phi_i$, completing the proof.
+\end{proof}
+
+The following property also emerges from the forward direction of the proof above:
+
+\begin{lemma} \label{lem:ranked-rightmost}
+    If there exists $j < i$ such that $h_i = h_j$, then $\bar \delta = \delta_j$ for the greatest such $j$.
+\end{lemma}
+
+\subsection{Tie-Breaking Term} \label{sec:tie-breaking}
+
+\changeC{The construction above uses a tie-breaker that favors retrieving tokens further to the right. We will justify the construction of such a tie-breaking term here. To begin, we will establish a bound on the layer-norm hash inner product similarity for inexact matches.}
+
+\begin{lemma} \label{lem:inexact-error}
+    For any $i \geq 2$, $\phi(i, 1) \cdot \phi(i-1, 1) \leq 1 - 1/(2 i^4)$.
+\end{lemma}
+
+\begin{proof}
+    Consider the squared dot product:
+    \begin{align*}
+        \big( \phi(i, 1) \cdot \phi(i-1, 1) \big)^2
+        & = \frac{\big( \langle i, 1, -i, -1 \rangle \cdot \langle i-1, 1, -(i-1), -1 \rangle \big)^2}{(2i^2 + 2) (2(i-1)^2 + 2)} \\
+        & = \frac{ \big( i(i-1) + 1 \big)^2 }{(i^2 + 1) ((i-1)^2 + 1)}  \\
+        & = \frac{i^2(i-1)^2 + 2i(i-1) + 1}{i^2(i-1)^2 + i^2 + (i-1)^2 + 1} \\
+        & = \frac{i^2(i-1)^2 + 2i(i-1) + 1}{i^2(i-1)^2 + 2i(i-1) + 2} \\
+        & = 1 - \frac{1}{i^2(i-1)^2 + 2i(i-1) + 2} \\
+        & = 1 - \frac{1}{i^4 - 2i^3 + 3i^2 - 2i + 2}
+    \end{align*}
+
+    Since $(1 - y/2)^2 \geq 1-y$ for any $y$, we have $\sqrt{1-y} \leq 1 - y/2$ for any $y \leq 1$. Applying this to the right hand side of the above equation, we obtain:
+    \begin{align*}
+        \phi(i, 1) \cdot \phi(i-1, 1)
+        & = \sqrt{1 - \frac{1}{i^4 - 2i^3 + 3i^2 - 2i + 2}} \\
+        & \leq 1 - \frac{1}{2i^4 - 4i^3 + 6i^2 - 4i + 4} \\
+        & \leq 1 - \frac{1}{2i^4} \ \ \ \text{for}\; i \geq 2 \text{,}
+    \end{align*}
+    which completes the proof.
+\end{proof}
+
+To break ties in attention, we aim to construct a function of $i$ that is computable in the transformer, monotonically decreasing with $i$, and smaller than $1/(2i^4)$. The following definition will accomplish this:
+
+\begin{definition} %\label{def:ranking-term}
+    We define the following inductively:
+    \begin{align*}
+            f(i, 0) & = 1/i \\
+            f(i, k+1) & = f(i-1, k) - f(i, k) .
+    \end{align*}
+\end{definition}
+
+By construction, $f(i, k)$ is monotonically increasing and a linear combination of $1/i, 1/(i-1), \ldots, 1/(i-k)$. The latter property means it is computable by a single multihead self-attention layer. To do this, we construct $k$ heads in parallel, where head $h$ attends to all tokens besides the first $h$ and puts value $1$ at token $h + 1$ and $0$ elsewhere.\footnote{This head can be implemented by setting a flag in the previous layer at each $i$ for whether $i \leq h$ by hardcoding a comparison between $\hash(1, 1/i)$ and $\hash(h, 1)$.} Head $h$ thus computes $1/(i-h)$. We use the linear transformation at the end of the layer to compute $f(i, k)$ via a linear combination of the head outputs.
+
+\begin{lemma}
+    \label{lem:tie-breaker-form}
+    For any $k$ and $i > k$, we have
+    \begin{equation*}
+        f(i, k) = \frac{k!}{\prod_{j=0}^k (i - j)} .
+    \end{equation*}
+\end{lemma}
+
+\begin{proof}
+    By induction over $k$.
+
+    \underline{Base Case: $i = 0$.} We have $f(i, 0) = 0! / i$.
+
+    \underline{Inductive Case.} We analyze the form of $f(i, k + 1)$:
+    \begin{align*}
+        f(i, k + 1)
+        &= f(i - 1, k) - f(i, k) \\
+        &= \frac{k!}{\prod_{j=0}^k (i-1-j)} - \frac{k!}{\prod_{j=0}^k (i-j)} \tag{Inductive assumption}\\
+        &= k! \cdot \frac{\prod_{j=0}^k (i-j) - \prod_{j=0}^k (i-1-j)}{i \prod_{j=1}^k (i-j)^2 (i-k-1)} \tag{Form common denominator}\\
+        &= k! \cdot \frac{i \prod_{j=1}^k (i-j) - (i - k - 1) \prod_{j=1}^k (i-j)}{i \prod_{j=1}^k (i-j)^2 (i-k-1)} \tag{Pull out factors}\\
+        &= k! \cdot \frac{(k + 1) \prod_{j=1}^k (i-j)}{i \prod_{j=1}^k (i-j)^2 (i-k-1)} \tag{Distributive property}\\
+        &= \frac{(k + 1)!}{i \prod_{j=1}^k (i-j) (i-k-1)} \tag{Simplify}\\
+        &= \frac{(k + 1)!}{\prod_{j=0}^{k + 1} (i-j)} . \qedhere
+    \end{align*}
+\end{proof}
+
+It remains to be shown that $f(i, k)$ can be made smaller than $1/(2i^4)$. To handle edge cases around small values of $i$, we define:
+% The following lemma justifies this for $k = 4$.
+\begin{definition}
+    \label{def:tie-breaker-term}
+    Let $\eps = 10^{-10}$.
+    For $i \geq 1$, let
+    \[
+        f(i) =
+            \begin{cases}
+                1/1000 - \eps i & \text{if\ } \;i \leq 4 \\
+                f(i, 3) / 100 & \text{if\ } i \geq 5
+            \end{cases}
+    \]
+\end{definition}
+
+\begin{lemma}
+    \label{lem:tie-breaker-is-small}
+    For $i \geq 1$, $f(i) < 1/(2i^4)$ .
+\end{lemma}
+\begin{proof}
+    When $i \leq 4$, we have $f(i) < 1/1000 < 1/(2i^4)$.
+    
+    When $i \geq 5$, by \Cref{lem:tie-breaker-form}, we have:
+    \begin{align*}
+        \frac{f(i, 3)}{100} & = \frac{3!}{100 i (i-1) (i-2) (i-3)}
+    \end{align*}
+    It can be verified that the values of $i$ for which this expression equals $1/(2i^4)$ are all in the interval $[0, 5)$, and that for $i \geq 5$, $(100/6)i (i-1) (i-2) (i-3) > 2i^4$.
+\end{proof}

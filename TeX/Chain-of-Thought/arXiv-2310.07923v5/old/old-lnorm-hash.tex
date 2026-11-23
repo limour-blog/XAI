@@ -1,0 +1,37 @@
+\begin{definition}[Layer-norm hash]
+    Given a key $k \in \mathbb R$, its layer-norm hash is
+    \begin{equation*}
+        \hash(k) = \lnorm(k, 1, -k, -1) .
+    \end{equation*}
+\end{definition}
+
+If a transformer represents a quantity $k_i$ at each column $i$, then it can directly compute $\hash(k_i)$ at each column. The useful thing about the layer-norm hash is that it will allow us to attend from column $i$ to another column $j$ where $k_i = k_j$. This follows from the following lemma if we pick an attention head that uses $\hash$ as queries and keys with a low temperature:
+
+\begin{lemma} \label{lem:lnorm-hash}
+    For two scalars $q, k$, $\hash(q) \cdot \hash(k)$ is maximized exactly when $q = k$.
+\end{lemma}
+
+\begin{proof}
+    Let $\phi_k = \langle k, 1, -k, -1\rangle$ be the input vector to layer-norm.
+    $\phi_k$ is constructed with mean $0$, so layer-norm reduces to $2$-normalization. Thus $\hash(k) = \phi_k / \norm{\phi_k}$, with $\norm{\phi_k} = \sqrt{2k^2 + 2}$.
+
+    At this point, we turn to considering the inner product $\hash(q) \cdot \hash(k)$:
+    \begin{align*}
+        \hash(q) \cdot \hash(k)
+        &= \frac{\phi_q}{\norm{\phi_q}} \cdot \frac{\phi_k}{\norm{\phi_k}} \\
+        &= \frac{2qk + 2}{\sqrt{(2q^2 + 2)(2k^2 + 2)}} \\
+        &= \frac{qk + 1}{\sqrt{(q^2 + 1)(k^2 + 1)}} .
+    \end{align*}
+    By definition, the inner product of unit-norm vectors is maximized at $1$.
+    We show that, in fact, it achieves $1$ only when $q = k$, showing that that is the unique maximum:
+    \begin{align*}
+        1 &= \frac{qk + 1}{\sqrt{(q^2 + 1)(k^2 + 1)}} \\
+        (qk + 1)^2 &= (q^2 + 1)(k^2 + 1) \\
+        (qk)^2 + 2qk + 1 &= (qk)^2 + q^2 + k^2 + 1 \\
+        2qk &= q^2 + k^2 \\
+        0 &= (q - k)^2 .
+    \end{align*}
+    The original equation is only satisfied when $q = k$, so we conclude that $\hash(q) \cdot \hash(k)$ is maximized if and only if $q = k$.
+\end{proof}
+
+\subsection{Denominator-Invariant Layer-norm Hash}

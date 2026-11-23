@@ -1,0 +1,67 @@
+\begin{proof}
+    Without loss of generality, we show a construction for transformers with $1/i$ positional encodings (cf.~\Cref{lem:start-separable}).
+    We will construct a transformer decoder that simulates a Turing machine in linear time: three transformer decoding steps will simulate one Turing machine step. This means the simulation will take $3t(n)$ steps, followed by an additional $3\ell(n)$ steps to reconstruct the output. The main difficulty will be constructing a distributed representation of a Turing machine tape in a sequence of transformer state vectors and showing how the transformer can both maintain this representation and correctly reconstruct the current status of the tape at the head position. The key idea to the construction will be to store ``diffs'' to the tape at each timestep and use the layer-norm hash to dynamically reconstruct the contents at the head position at every new timestep.
+
+    We introduce a new finite vocabulary $\Delta$ and identify each element of $Q \times \Gamma^{k+1} \times \{\pm 1 \}^{k+2}$ with some $\delta \in \Delta$. A deterministic Turing machine run of length $m$ induces a \emph{diff sequence} $\delta_0, \ldots, \delta_m \in \Delta$ capturing the state entered, tokens written, and directions moved after each token.
+    We work with a $3{\times}$ redundant diff sequence: $\delta_{3t}$ to $\delta_{3t + 2}$ all write the same token to three adjacent tape positions.
+    \change{We show by induction over $t$ that we can output $\delta_{3t + \pi}$ at intermediate step $3t + \pi$, for $\pi \in \{0, 1, 2\}$.
+    For technical reasons, we will also output the modular offset $\pi_i \in \{0, 1, 2\}$ along with $\delta_i$.
+
+
+    % as well as a token $\pi_i \triangleq i \bmod 3$ at decoding steps $3t + \pi$ for $\pi \in \{0, 1, 2\}$.
+    \underline{Base Case: $t = 0$.} Output $\delta_0 = \langle q_0, b^k, 1 \rangle$ at the final 3 input tokens (w.l.o.g. assume length 3 input).
+    }
+
+    \underline{Inductive Case:}
+    We first use a single layer to reconstruct each $h^\tau_i$, the current position on tape $\tau$ at step $i$. For each $\tau$, a head attends uniformly over the full left context where the value at a decoding step $j$ is the move direction of $\tau$ at $j$.
+    Head $\tau$ thus computes $h^\tau_i/i$.
+
+    \change{We now describe step $i = n + 3t$, which is the main part of the construction.
+    The first task is to find token $h^0_i$ of the input tape with attention. For this, at each index $i$, we define $x_i, y_i$ as
+    \begin{equation*}
+        \langle x_i, y_i \rangle = \begin{cases}
+            \langle 1, 1/i \rangle & \textrm j \leq n \\
+            \langle h^0_i/i, 1/i \rangle & \textrm{otherwise} .
+        \end{cases}
+    \end{equation*}
+    Let $\langle \cdot \rangle$ be vector concatenation.
+    We use the stateful extension of the layer-norm hash ($\hash_z$, \Cref{sec:stateful-lnorm-hash}) to propagate $q_{i-1}$ to the next layer while using the hash.
+    Let $\mathbf W$ be the linear transformation defined in \Cref{lem:stateful-hash}.
+    We attend with key $\langle \mathbf W \phi_z(x_i, y_i), 1 \rangle$, query $\langle \mathbf W \phi_z(x_j, y_j), \mathbbm{1}[j \leq n] \rangle$ and value $\sigma_j$. By \Cref{lem:stateful-hash}, the attention score is maximized for some $j \leq n$ such that $\phi(x_i, y_i) = \phi(x_j, y_j)$. For $i > n$ and $j \leq n$, this means $\phi_{h^0_i} = \phi_j$. By \Cref{lem:lnorm-unique}, the head retrieves $\sigma_{h^0_i}$. Columns $3t + 1$ and $3t + 2$ compute $0$ queries for this head and do not move on the tape.
+    }
+
+    % \will{For single-tape TM, no issue. For multi-tape, we can split across layers. Then keep $\delta$'s in residual connection. Use stateful hash and invoke \Cref{lem:stateful-hash} to justify that it behaves analogously to normal hash. Then call \Cref{lem:lnorm-unique} to analyze in terms of normal hash.}
+    \change{Next, we use $k$ different layers to get the position $h^\tau_i$ on each non-input tape $\tau$. In addition to the stateful hash, we will use the layer-norm hash in a way that enables rightmost hard attention (\Cref{sec:rightmost-lnorm-hash}). In each layer, we first compute $\phi^\tau_i \triangleq \hash_z(h^\tau_i/i, 1/(i-1))$ at each $i$.
+    % Let $\mathbf W$ be the linear transformation defined in \Cref{lem:stateful-hash}.
+    % and $\langle \cdot \rangle$ denote vector concatenation.
+    % We construct a head that attends with query $\langle \mathbf W \phi^\tau_i, 1 \rangle$ over keys $\langle \mathbf W \phi^\tau_j, -1/j \rangle$ and values $\delta_{h^\tau_j}$, for $j \leq i$.
+    We construct a head that attends with query $\mathbf W \phi^\tau_i$ over keys $\mathbf W \phi^\tau_j$ and values $\delta_{h^\tau_j}$, for $j < i$.
+    We will justify that this head attends to the rightmost $j < i$ such that $h^\tau_j = h^\tau_i$ and thus retrieves the last update to the tape position at step $i$.
+    First, we apply \Cref{lem:stateful-hash} to rewrite $\mathbf W \phi^\tau_i$ as
+    \begin{equation*}
+        \mathbf W \phi^\tau_i = \hash(h^\tau_i/i, 1/(i-1)) .
+    \end{equation*}
+    Next, we can use the scale invariance of the layer-norm hash to simplify
+    \begin{equation*}
+        \mathbf W \phi^\tau_i = \hash(h^\tau_i, i/(i-1)) .
+    \end{equation*}
+    Finally, by \Cref{lem:rightmost-lnorm}, $(\mathbf W \phi^\tau_i) \cdot (\mathbf W \phi^\tau_j)$ is maximized for the greatest $j < i$ s.t. $h^\tau_j = h^\tau_i + \pi$ for some $\pi \in \{0, 1, 2\}$. By construction, the last updates at tape cells $h^\tau_{3t}$ through $h^\tau_{3t} + 2$ are the same.
+    Thus, at step $3t$, the head retrieves the most recent update to the current tape cell at step $h^\tau_{3t}$, which we denote $d^\tau_i$.}
+
+    % ========
+    % OLD
+    % ========
+    % \will{old} \underline{Inductive Case:} We can now apply $k$ different layer-norm hashes to get $\phi^\tau_i \triangleq \hash(h^\tau_i/(n+i), 1/(n+i))$ in parallel at each $i$. By \Cref{lem:lnorm-unique}, the inner product $\phi^\tau_i \cdot \phi^\tau_j$ is maximized when $h^\tau_i$ and $h^\tau_j$ are equal. For each $\tau$ we construct a head that hard-attends with query $\langle \phi^\tau_i, 1 \rangle$ over keys $\langle \phi^\tau_j, -1/j \rangle$ and values $\delta_{h^\tau_j}$, for $j \leq i$. This returns the last update $d^\tau_i$ written to the head position at step $i$.
+
+    We now have all the necessary inputs to compute the next Turing machine transition.
+    For each $\tau \geq 0$, the second component of $d^\tau_i$ is $\gamma^\tau_i$: the current contents of cell $h^\tau_i$ of tape $\tau$. As input to column $i$ of the transformer, we have $\delta_{i - 1}$, which contains $q_{i-1}$. We now compute
+    % \begin{equation*}
+        $\delta_i = \delta(q_{i-1}, \gamma^0_i, \ldots \gamma^{k + 1}_i)$
+    % \end{equation*}
+    using a feedforward network, which is possible because this computation is simply a finite table lookup. We write out $\delta_i$ as the output of column $i = n + 3t$.
+
+    \change{To compute the inductive step, at $3t + 1$ and $3t + 2$, we simply copy the output token from $3t$. If the original Turing machine moved right, we move $1, 1, 1$ after each step. On the other hand, if the original machine moved left, we move $1, 1, -5$ after each step. This ensures that the cell contents of $h_i$ to $h_{i + 2}$ are populated correctly and that $h_{i + 3}$ is correctly represents $3(t \pm 1)$. Finally, we update the modular counter $\pi_i$ based on $\pi_{i-1}$ using a simple table lookup.}
+
+    To conclude, we use at most $3\abs{M(x)}$ steps to reconstruct the Turing machine output. Analogously to above, we retrieve $d^{k+1}_i$, the last update written to the current head position on the output tape, and output $\gamma^{k+1}_i$. We then write a diff $\delta_i$ that moves the head to the right. We iterate in this state until $b$ (blank) is read, at which point we halt.
+    We conclude that we are able to simulate $M$ in real-time, i.e., the transformer runs one decoding step per step of $M$ followed immediately by $M$'s output.
+\end{proof}

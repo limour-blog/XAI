@@ -1,0 +1,77 @@
+\subsection{Extending CoT Transformers' Power}
+
+Finally, we propose the \textbf{value-masked transformer}: a minimal extension of the causally masked transformer that can simulate a Turing machine with CoT \emph{without} the exponential blowup incurred by standard transformers with CoT. The idea of the value-masked transformer is simple: we allow the transformer to optionally attend to a ``future'' key, in which case it retrieves the zero vector as a value. Doing this allows the transformer to compute uniform averages with comparable denominators at different positions in the sequence, which is crucial for our Turing machine simulation construction. We also describe a \textbf{layer-norm hash} construction that any transformer can use to attend to positions with exact-matching sums, which is especially useful for value-masked transformers because it enables retrieving based on exact match in uniform averages.
+
+The value-masked transformer has better guarantees for expressive power, and we hypothesize that the construction underlying the Turing machine simulation could be generally useful for language processing. Empirically, we find that value-masked transformers can better learn to use a CoT compared to standard transformers, and also achieve stronger performance on standard language modeling benchmarks. We take this as evidence that value-masked attention is both theoretically and practically useful. \will{Best-case results :)}
+
+\section{Value-Masked Transformers}
+
+\will{This section is a bit out of place now because we don't have additional power. Maybe the framing could be: in theory, incomparable denominators are not an issue. But do they present an issue for learning? We introduce and test the value-masked transformer to find out.}
+
+While we are able to simulate the state sequence for a Turing-complete $2$-counter machine with a standard transformer, we were not able to construct a simulation of a Turing machine state sequence directly. This implies that, while a transformer with chain-of-thought can simulate a Turing machine, it may need exponentially many more steps than the original Turing machine did (and these steps are already more expensive than simple Turing machine operations!).
+
+In this section, we introduce the \emph{value-masked} transformer: a simple extension of the causally masked transformer that is able to directly simulate the state sequence of a Turing machine. The minimal extension of the transformer simply allows the transformer to attend ``into the future'' and retrieve the $\vec 0$ vector. At first glance, this may seem useless, but it has some powerful implications in the chain of thought setup: it allows the outputs of uniform heads at different time steps to be comparable, in the sense that they have the same denominator. This is important because it enables hard attention matching for equality in terms of the uniform head output.
+This is perhaps a generally useful capability for chain-of-thought reasoning, but it is particularly useful in our context for being able to simulate a Turing machine tape correctly.
+
+Formally, we define a value-masked transformer over $t$ steps as follows. In addition to the standard key $\mathbf k_i$, query $\mathbf q_i$, and value $\mathbf v_i$ at each time step $i$, we also compute a special ``future'' key $\mathbf k_i^*$. We then allow the transformer to put probability mass onto the future and retrieve $\vec 0$ with this key. Mathematically, this corresponds to simply redefining the normalizing constant in the attention computation as
+\begin{align*}
+    % \mathbf h_i &= \sum_{j \leq i} \frac{\exp(q_i^\top \cdot \mathbf k_j)}{Z_i} \mathbf v_j , \\
+    Z_i &= \sum_{j \leq i} \exp(\mathbf q_i^\top \cdot \mathbf k_j) + (t - i) \exp(\mathbf q_i^\top \cdot \mathbf k_i^*) .
+\end{align*}
+
+To see how we will use this kind of attention, let $\mathbf k_j = \mathbf k_i^*$ for a fixed $i$ and all $j$. Then we recover a uniform sum over all $t$ timesteps, where the future timesteps ($j \geq i$) can be understood to have $\mathbf v_j = \vec 0$:
+\begin{equation*}
+    \mathbf h_i = \frac{1}{t} \sum_{j=1}^{t} \mathbf v_j .
+\end{equation*}
+In contrast, standard causally masked uniform attention can be recovered by setting $\mathbf k_j$ and $\mathbf k_i^* = 0$, yielding:
+\begin{equation*}
+    \mathbf h_i = \frac{1}{i} \sum_{j=1}^i \mathbf v_j .
+\end{equation*}
+Because the normalization depends on $i$, the head outputs are incomparable for different values of $i$. That is, we cannot straightforwardly compare $\mathbf h_i$ and $\mathbf h_j$ for $i \neq j$ and conclude whether the sums they capture are the same or not.
+
+\subsection{Stronger Lower Bounds for Value-Masked Transformers}
+
+We now show how value-masked attention and the layer-norm hash construction allow a transformer to simulate the state sequence of a Turing machine in real time.
+
+\begin{theorem} \label{thm:lower-bound}
+    A \will{value-masked} transformer with $t(n)$ chain-of-thought steps can simulate the state sequence of a Turing machine for $t(n)$ steps.
+\end{theorem}
+
+\begin{proof}
+    The key idea is to simulate one step of a Turing machine run with one forward pass of the transformer. The main difficulty will be constructing a distributed representation of a Turing machine tape in a sequence of transformer state vectors and showing how the transformer can both maintain this representation and correctly reconstruct the current status of the tape at the head position. The key idea behind the construction will be to store ``diffs'' to the tape at each timestep, and then use attention to dynamically reconstruct the contents at the head position at every new timestep.
+
+    % The Turing machine is captured by a transition function $\delta : Q \times \Sigma \to Q \times \Gamma \times \{\mathsf{L}, \mathsf{R}\}$.
+    We introduce a new finite vocabulary $\Delta$ and identify each element of $Q \times \Gamma \times \{\pm 1 \}$ with some $\delta \in \Delta$. A deterministic Turing machine run of length $m$ induces a \emph{diff sequence} $\delta_0, \ldots, \delta_m \in \Delta$ capturing the state entered, token written, and direction moved after each token.
+    The diff state sequence encodes all the information necessary to accept or reject a string with a Turing machine: simply project $\delta_i$ onto its first component $q_i$ and check whether $q_i \in F$.
+
+    We show by induction over $i$ that we can construct a chain-of-thought transformer that outputs $\delta_i$ at step $i$.
+
+    The first layer of the transformer, each position $i$ attends uniformly over the full context where the value at position $j$ is the third (move direction) component of $\delta_j$ at a CoT step and $0$ at other columns.\footnote{This can be easily extended to allow no-op moves.} The value of this head is thus $h_i/t(n)$, where $h_i$ is the position of the simulated TM head after $i$ steps.
+
+    We can now apply a layer-norm hash to $j/t(n)$ in parallel at each $j < i$. By \Cref{lem:lnorm-hash}, we can hard-attend over these keys with query $h_i/t(n)$ to retrieve $\delta_{h_i}$, i.e., the last update written at position $h_i$.
+
+    At this point, the transformer at position $i$ encodes $\delta_{h_i}$, whose second component is $\gamma_i$: the current contents of the cell at the head position. As input to this column of the transformer, we have $\delta_{i - 1}$, which encodes the current finite state $q_{i-1}$. We now compute $\delta_i = \delta(q_i, \gamma_i)$ using a feedforward network, which is possible because this computation is simply a finite table lookup. We write out $\delta_i$ as the output of the column.
+
+    We conclude that we are able to simulate a Turing machine state sequence in real time with a value-masked transformer.
+\end{proof}
+
+The above result is tight (there is no constant factor on the number on the number of steps needed). This implies the following result in terms of time complexity classes:
+
+\begin{corollary}
+    Let $\CoT^*(t(n))$ denote the expressive power of the transformer with value-masked attention. Then,
+    \begin{equation*}
+        \TIME(t(n)) \subseteq \CoT^*(t(n)) .
+    \end{equation*}
+\end{corollary}
+
+For example, this implies that a linear number of CoT steps can simulate deterministic pushdown automata, which is sufficient for capabilities like Dyck language recognition.
+
+\section{Experiments with Value-Masked Attention}
+
+Desired experiments:
+\begin{enumerate}
+    \item value-masked transformer vs. standard transformer on (natural) language modeling
+    \item Train value-masked vs. standard transformer on x, CoT, y then evaluate accuracy when only x is given.
+\end{enumerate}
+
+\will{These experiments are most worth it if we do indeed think that value-masked attention adds power}

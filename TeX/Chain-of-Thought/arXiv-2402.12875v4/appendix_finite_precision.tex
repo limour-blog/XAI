@@ -1,0 +1,45 @@
+\section{Details on Finite-Precision Layers}\label{appsec:finite_precision}
+
+In this section, we give the definition of the finite-precision version of different transformer layers.  Recall that given $s\in\mathbb{N}^+$, the numbers representable using $2s$-bit significand and $e$-bit exponent is $\Floating_{e,s}\triangleq \{ S\cdot 2^{-s +E} \mid -2^{2s}+1\le S\le 2^{2s}-1, -2^{\max(0,e-1)}\le E\le 2^e -1 -2^{\max(0,e-1)}, E,S\in\mathbb{N} \}$.
+
+
+\paragraph{Self-Attention Mechanism:} Given attention parameter $\theta_\Attn = (W_Q,W_K,W_V,W_O)\in  \Floating_{e,s} ^{d\times d}\times  \Floating_{e,s} ^{d\times d}\times \Floating_{e,s} ^{d\times d}\times  \Floating_{e,s} ^{d\times d}$, we define the self-attention layer with causal mask for decoder-only transformer in \Cref{alg:defi_attn}.
+
+\begin{algorithm}
+\caption{Finite-Precision Causal Self-Attention, $\Attn$}\label{alg:defi_attn}
+\begin{algorithmic}[1]
+\Require  Integer $s\in\mathbb{N}^+$, $e\in\mathbb{N}$, Parameter $\theta_\Attn = (W_Q,W_K,W_V,W_O)$, Input embedding $h= (h_1,\ldots, h_n)\in \Floating_{e,s} ^{nd}$.
+\Ensure Output embedding $h'= (h'_1,\ldots, h'_n) \triangleq \Attn_{\theta_\Attn}(h_1,\ldots, h_n)$.
+\State $q_i \triangleq W_Q \times_{e,s}  h_i, k_i \triangleq W_K \times_{e,s} h_i, v_i \triangleq W_V \times_{e,s} h_i, \forall i\in[n]$
+\State $s_i \triangleq \softmax_{e,s}(\inner{q_i}{k_1}_{e,s},\ldots,\inner{q_i}{k_i}_{e,s}) \| (0,\ldots, 0) $. \Comment{ $n-i$'s 0; Mask for Causal Attention;}
+\State $h'_i \triangleq W_O \times_{e,s} \sumes(  [v_1,\ldots, v_n] \times_{e,s} s_i)$.
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\paragraph{Feed-Forward Network:} Given $s\in\mathbb{N}^+$, $e\in\mathbb{N}$, and the parameter of fully-connected feedforward network layer $\theta_\FF = (W_1,b_1,W_2,b_2)\in  \Floating_{e,s} ^{d\times d}\times  \Floating_{e,s} ^d \times  \Floating_{e,s} ^{d\times d}\times  \Floating_{e,s} ^d$, we define the fully-connected feedforward layer $\FF_{\theta_\FF}: \Floating_{e,s} ^d\to  \Floating_{e,s} ^d$ as $\FF_{\theta_{\FF}}(h) \triangleq \rdes{W_2\times_{e,s} \relu(\rdes{W_1 \times_{e,s} h + b_1}) + b_2}$.
+
+\paragraph{Token Embedding:} Given $s\in\mathbb{N}^+$, $e\in\mathbb{N}$, and the parameter of token embedding layer $\theta_\tokenembedding \in  \Floating_{e,s} ^{d \times|\gV|}$, we define the token embedding layer by viewing $\theta_\tokenembedding$ as a mapping from $\gV $ to $ \mathbb{R}^d$, that is, for all $x\in \gV$, the token embedding is $\theta_\tokenembedding(x)$. 
+
+\paragraph{Position Encoding:}  Given $s\in\mathbb{N}^+$, $e\in\mathbb{N}$, and the parameter of position encoding layer $\theta_\posencoding \in  \Floating_{e,s} ^{d \times n_{\max}}$, we define the token embedding layer by viewing $\theta_\posencoding$ as a mapping from $[n_{\max}] $ to $ \mathbb{R}^d$ that is, for all $n\in [n_{\max}]$, the position embedding is as $\theta_\posencoding(n)$. 
+
+\paragraph{Output Layer:} Given $s\in\mathbb{N}^+$, $e\in\mathbb{N}$, and the parameter of output layer $\theta_\transoutput  \in  \Floating_{e,s} ^{|\gV| \times  d}$, we define the output layer $\transoutput_{\theta_\transoutput}: \Floating_{e,s} ^d \to \gV$ as $\transoutput_{\theta_\transoutput}(h)\triangleq \softmax_{e,s}(\theta_{\transoutput}\times_{e,s} h)$ for all $h\in  \Floating_{e,s} ^d$. 
+
+Finally, we define finite-precision decoder-only transformers below.
+
+\begin{algorithm}[h]
+\caption{Finite-precision Decoder-only Transformer, $\protect\transformer_\theta$ and $p_\theta$}\label{alg:defi_transformer_finite_precision}
+\begin{algorithmic}[1]
+
+\Require Integer $s\in\mathbb{N}^+$, $e\in\mathbb{N}$. Transformer parameter $\theta = (\theta_\posencoding,\theta_\tokenembedding,\theta_\transoutput,\{\theta^{(l)}_\Attn,\theta^{(l)}_\FF\}_{l=0}^{L-1} )$ with $2s$-bit  precision and $e$-bit exponent. Input tokens $x= (x_1,\ldots, x_n)\in\gV^n$.
+\Ensure Output distribution $p_\theta(\cdot \mid x_1,\ldots, x_i)$ for all $i\in[n]$ and output token $\transformer_\theta(x)$.
+\State $h^{(0)}_i \triangleq \rdes{\tokenembedding(x_i) + \posencoding(i)}, \forall i \in [n]$
+\For{$l = 0,\ldots,L-1$}
+\State	$( h^{(l+0.5)}_1,\ldots, h^{(l+0.5)}_n) \triangleq  \rdes{(h^{(l)}_1,\ldots, h^{(l)}_n) +\Attn_{\theta^{(l)}_\Attn}(h^{(l)}_1,\ldots, h^{(l)}_n)} $
+\State  $ h^{(l+1)}_i \triangleq \rdes{ h^{(l+0.5)}_i + \FF_{\theta^{(l)}_\FF}(h^{(l+0.5)}_i)}$, $\forall i \in [n]$
+\EndFor
+\State $p_\theta(\cdot\mid x_1,\ldots,x_i) \triangleq  \rdes{\transoutput_{\theta_\transoutput}(h^{(L)}_i)}, \forall i \in [n]$
+\State $\transformer_\theta(x)\triangleq \argmax_{x} p_\theta(x\mid x_1,\ldots,x_n)$.
+\end{algorithmic}
+\end{algorithm}

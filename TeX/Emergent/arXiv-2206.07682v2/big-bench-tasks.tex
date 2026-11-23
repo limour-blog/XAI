@@ -1,0 +1,39 @@
+
+\begin{figure}[ht]
+    \begin{centering}
+\begin{tikzpicture}
+\pgfplotsset{width=\linewidth,height=10cm,compat=1.8}
+\begin{axis}[
+    ybar stacked,
+	bar width=10pt,
+    enlargelimits=0.05,
+    legend style={at={(0.8,0.6)}, anchor=north,},
+    legend cell align={left},
+    axis x line*=bottom,
+    axis y line*=left,
+    ylabel={Number of tasks},
+    xlabel={Keyword Tag},
+    ytick={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50},
+    symbolic x coords={logical-reasoning, common-sense, reading-comprehension, mathematics, analogical-reasoning, human-like-behavior, context-free-question-answering, social-reasoning, contextual-question-answering, arithmetic, numerical-response, non-language, non-English, visual-reasoning, out-of-distribution, creativity, implicit-reasoning, causal-reasoning, paraphrase, emotional-understanding, computer-code, multilingual, multi-step, word-sense-disambiguation, low-resource-language, context-length, translation, theory-of-mind, narrative-understanding, summarization, domain-specific, truthfulness, repeated-interaction},
+    xtick=data,
+    x tick label style={rotate=45,anchor=east,font=\footnotesize{}},
+    ]
+    \addplot+[ybar,color=deepskyblue] plot coordinates {(logical-reasoning, 6) (common-sense, 5) (reading-comprehension, 2) (mathematics, 0) (analogical-reasoning, 3) (human-like-behavior, 0) (context-free-question-answering, 3) (social-reasoning, 4) (contextual-question-answering, 0) (arithmetic, 1) (numerical-response, 0) (non-language, 0) (non-English, 3) (visual-reasoning, 0) (out-of-distribution, 1) (creativity, 2) (implicit-reasoning, 3) (causal-reasoning, 1) (paraphrase, 1) (emotional-understanding, 5) (computer-code, 0) (multilingual, 1) (multi-step, 1) (word-sense-disambiguation, 1) (low-resource-language, 1) (context-length, 1) (translation, 2) (theory-of-mind, 3) (narrative-understanding, 1) (summarization, 0) (domain-specific, 2) (truthfulness, 2) (repeated-interaction, 1) };
+    \addplot+[ybar,color=frenchblue] plot coordinates {(logical-reasoning, 14) (common-sense, 14) (reading-comprehension, 13) (mathematics, 5) (analogical-reasoning, 11) (human-like-behavior, 6) (context-free-question-answering, 5) (social-reasoning, 6) (contextual-question-answering, 5) (arithmetic, 3) (numerical-response, 2) (non-language, 3) (non-English, 1) (visual-reasoning, 4) (out-of-distribution, 1) (creativity, 3) (implicit-reasoning, 3) (causal-reasoning, 2) (paraphrase, 5) (emotional-understanding, 2) (computer-code, 3) (multilingual, 2) (multi-step, 1) (word-sense-disambiguation, 6) (low-resource-language, 3) (context-length, 1) (translation, 2) (theory-of-mind, 0) (narrative-understanding, 2) (summarization, 3) (domain-specific, 1) (truthfulness, 1) (repeated-interaction, 0) };
+    \addplot+[ybar,color=blanchedalmond] plot coordinates {(logical-reasoning, 14) (common-sense, 13) (reading-comprehension, 13) (mathematics, 10) (analogical-reasoning, 4) (human-like-behavior, 8) (context-free-question-answering, 6) (social-reasoning, 4) (contextual-question-answering, 11) (arithmetic, 9) (numerical-response, 8) (non-language, 4) (non-English, 6) (visual-reasoning, 1) (out-of-distribution, 5) (creativity, 7) (implicit-reasoning, 4) (causal-reasoning, 6) (paraphrase, 3) (emotional-understanding, 3) (computer-code, 2) (multilingual, 4) (multi-step, 3) (word-sense-disambiguation, 2) (low-resource-language, 3) (context-length, 1) (translation, 2) (theory-of-mind, 3) (narrative-understanding, 1) (summarization, 2) (domain-specific, 3) (truthfulness, 0) (repeated-interaction, 0) };
+    \addplot+[ybar,color=pink] plot coordinates {(logical-reasoning, 15) (common-sense, 9) (reading-comprehension, 4) (mathematics, 8) (analogical-reasoning, 1) (human-like-behavior, 4) (context-free-question-answering, 4) (social-reasoning, 3) (contextual-question-answering, 1) (arithmetic, 4) (numerical-response, 5) (non-language, 7) (non-English, 4) (visual-reasoning, 8) (out-of-distribution, 6) (creativity, 1) (implicit-reasoning, 2) (causal-reasoning, 3) (paraphrase, 3) (emotional-understanding, 2) (computer-code, 6) (multilingual, 4) (multi-step, 6) (word-sense-disambiguation, 1) (low-resource-language, 2) (context-length, 5) (translation, 2) (theory-of-mind, 2) (narrative-understanding, 2) (summarization, 1) (domain-specific, 0) (truthfulness, 2) (repeated-interaction, 4) };
+    \legend{\strut \hspace{1mm} Emergent with LaMDA/GPT, \strut \hspace{1mm} Emergent with PaLM, \strut \hspace{1mm} Smoothly increasing, \strut \hspace{1mm} Flat (no model better than random)}
+\end{axis}
+\end{tikzpicture}
+\caption{
+Proportion of emergent tasks for keywords in BIG-Bench (each task can be associated with multiple keywords).
+We only included keywords with at least five tasks.
+Smoothly increasing: performance improved predictably as model scale increased.
+Emergent with LaMDA/GPT: performance was near-random until used with LaMDA 137B or GPT-3 175B.
+Emergent with PaLM: performance was near-random for all previous models, until using a PaLM model (8B, 62B, or 540B).
+Flat: no model performs better than random.
+} 
+\label{fig:keyword-tags}
+\end{centering}
+\end{figure}
+

@@ -1,0 +1,161 @@
+\documentclass[11pt]{article} % For LaTeX2e
+%\usepackage{times}
+\usepackage{newtxtext}
+\usepackage[left=1.25in, top=1in, bottom=1in, right=1.25in]{geometry}
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2020
+
+% ready for submission
+% \usepackage{neurips_2020}
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2020}
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{neurips_2020}
+
+% to avoid loading the natbib package, add option nonatbib:
+%\usepackage[nonatbib]{neurips_2023}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+%\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+%\usepackage{microtype}      % microtypography
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{natbib}
+\usepackage{graphicx}
+\usepackage{dsfont}
+\usepackage{float}
+\usepackage{enumitem}
+\setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+\usepackage[font=small,labelfont=bf,
+   justification=justified,
+   format=plain]{caption}
+\usepackage{subcaption}
+\usepackage{complexity}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{textcomp}
+\usepackage[absolute,overlay]{textpos} 
+\usepackage{xparse,xstring}
+\setlength{\TPHorizModule}{1mm}
+\setlength{\TPVertModule}{\TPHorizModule}
+\textblockorigin{0mm}{0mm} % start from top-left corner
+\usepackage[colorlinks=true,linkcolor=magenta,citecolor=blue]{hyperref}%
+\usepackage{cleveref}
+\usepackage{cancel}
+\usepackage{xcolor}
+\usepackage{authblk}
+\include{math_commands}
+\include{our_commands}
+\newcommand{\zhiyuan}[1]{{\color{cyan} [ZL: #1]}}
+%\newcommand{\zhiyuan}[1]{}
+\newcommand{\tnote}[1]{{\color{red} [T: #1]}}
+\newcommand{\hnote}[1]{{\color{blue} [H: #1]}}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\numberwithin{theorem}{section} 
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}{Definition}
+\numberwithin{definition}{section} 
+%\numberwithin{definition}{section} 
+%\newtheorem{assumption}{Assumption}
+\newtheorem{remark}{Remark}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{hypothesis}{Hypothesis}
+\renewcommand{\paragraph}[1]{\textbf{#1}}
+\renewcommand{\CancelColor}{\color{red}}
+\newcommand{\revise}[2]{%
+   {\cancel{#1}  \ \textcolor{red}{#2}}%
+}
+\newcommand{\revision}[1]{{\color{red} #1}}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+%\title{Understanding the Benefit of Chain-of-thoughts Via the Lens of Expressiveness}
+% \title{On the Expressive Power of Chain of Thought}
+\title{Chain of Thought Empowers Transformers to Solve Inherently Serial Problems}
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+%
+\makeatletter
+\renewcommand\AB@affilsepx{, \protect\Affilfont}
+\makeatother
+
+\author[1,2]{Zhiyuan Li}
+\author[1]{Hong Liu}
+\author[3]{Denny Zhou}
+\author[1]{Tengyu Ma}
+\date{}
+% Define affiliations with corresponding markers
+\affil[1]{Stanford University}
+\affil[2]{Toyota Technological Institute at Chicago}
+\affil[3]{Google}
+
+
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+Instructing the model to generate a sequence of intermediate steps, \emph{a.k.a.}, a chain of thought (CoT), is a highly effective method to improve the accuracy of large language models (LLMs) on arithmetics and symbolic reasoning tasks. However, the mechanism behind CoT remains unclear. 
+This work provides a theoretical understanding of the power of CoT for decoder-only transformers through the lens of expressiveness. Conceptually, CoT empowers the model with the ability to perform inherently serial computation, which is otherwise lacking in transformers, especially when depth is low. Given input length $n$, previous works have shown that constant-depth transformers with finite precision $\mathsf{poly}(n)$ embedding size can only solve problems in $\mathsf{TC}^0$ without CoT. We first show an even tighter expressiveness upper bound for constant-depth transformers with constant-bit precision, which can only solve problems in $\mathsf{AC}^0$, a proper subset of $ \mathsf{TC}^0$. However, with $T$ steps of CoT, constant-depth transformers using constant-bit precision and $O(\log n)$ embedding size can solve any problem solvable by boolean circuits of size $T$. Empirically, enabling CoT dramatically improves the accuracy for tasks that are hard for parallel computation, including the composition of permutation groups, iterated squaring, and circuit value problems, especially for low-depth transformers. 
+
+
+\end{abstract}
+
+
+\input{intro}
+
+%\input{related_work}
+\input{preliminary}
+
+\input{main_result}
+
+\input{experiments}
+\input{additional_related_works}
+\input{conclusion}
+\section*{Acknowledgement}
+The authors would like to thank the support from NSF IIS 2045685. The authors also thank Wei Zhan and Lijie Chen for providing references on circuit complexity and various inspiring discussions, Cyril Zhang and Bingbin Liu for helpful discussions on Khron-Rhodes decomposition theorem, and Kaifeng Lyu for his helpful feedback.
+\bibliography{all,ours}
+\bibliographystyle{iclr2024_conference}
+
+\appendix
+
+\newpage
+\appendix
+{
+  \hypersetup{linkcolor=black}
+  \tableofcontents
+}
+\newpage
+
+\input{appendix_exp}
+\input{appendix_finite_precision}
+\input{preliminary_automaton}
+\input{appendix_proof_upper_bound}
+\input{appendix_proof}
+
+\input{appendix_non_uniformity}
+
+
+
+
+
+\end{document}

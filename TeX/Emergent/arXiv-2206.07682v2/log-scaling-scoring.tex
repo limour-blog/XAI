@@ -1,0 +1,509 @@
+\begin{figure*}[ht]
+    \begin{centering}
+    \begin{tikzpicture}
+        \pgfplotsset{footnotesize,samples=10}
+        \begin{groupplot}[
+            group style = {group size = 4 by 1, horizontal sep = 30pt},
+            width = 4cm,
+            height = 3.7cm]
+            \nextgroupplot[
+                align = center,
+                title = {Logical arguments},
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=38, ymax=102,
+                xtick={1e20, 1e22, 1e24},
+                ytick={40, 60, 80, 100},
+                yticklabels={40, 60, 80, 100},
+                axis x line*=bottom,
+                axis y line*=left,
+                ylabel={Error rate (\%)},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.25,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=1.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  71.9)
+                    (8.9e19,  93.7)
+                    (1.4e20,  84.4)
+                    (4.2e20,  93.7)
+                    (4.1e20,  78.1)
+                    (9.1e20,  78.1)
+                    (1.7e21,  78.1)
+                    (2.96e21, 78.1)
+                    (6.8e21,  75)
+                    (2.3e22,  78.1)
+                    (1.2e23,  56.2)
+                    (5.4e23,  40.6)
+                    };
+                \addplot[
+                    color=frenchrose,
+                    mark=square,
+                    no markers,
+                    dashed,
+                    line width=1.3pt,
+                    ]
+                    coordinates {
+                    (1, 80)
+                    (1e25, 80)
+                    };
+            \nextgroupplot[
+                align = center,
+                title = {Sports understanding},
+                legend style={at={(0.5,1.3)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=38, ymax=102,
+                xtick={1e20, 1e22, 1e24},
+                ytick={40, 60, 80, 100},
+                yticklabels={40, 60, 80, 100},
+                axis x line*=bottom,
+                axis y line*=left,
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=1.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  51.5)
+                    (8.9e19,  52.2)
+                    (1.4e20,  52.4)
+                    (4.2e20,  51.1)
+                    (4.1e20,  52.1)
+                    (9.1e20,  51.6)
+                    (1.7e21,  53.2)
+                    (2.96e21, 52.8)
+                    (6.8e21,  51.7)
+                    (2.3e22,  50.2)
+                    (1.2e23,  49.9)
+                    (5.4e23,  40.9)
+                    };
+                    \addlegendentry{LaMDA}
+                \addplot[
+                    color=frenchrose,
+                    mark=square,
+                    no markers,
+                    dashed,
+                    line width=1.3pt,
+                    ]
+                    coordinates {
+                    (1, 50)
+                    (1e25, 50)
+                    };
+                    \addlegendentry{Random}
+            \nextgroupplot[
+                align = center,
+                title = {Figure of speech},
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=38, ymax=102,
+                xtick={1e20, 1e22, 1e24},
+                ytick={40, 60, 80, 100},
+                yticklabels={40, 60, 80, 100},
+                axis x line*=bottom,
+                axis y line*=left,
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=1.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  96.6)
+                    (8.9e19,  94.9)
+                    (1.4e20,  93.2)
+                    (4.2e20,  91.5)
+                    (4.1e20,  94.9)
+                    (9.1e20,  89.8)
+                    (1.7e21,  91.5)
+                    (2.96e21, 88.1)
+                    (6.8e21,  86.4)
+                    (2.3e22,  84.7)
+                    (1.2e23,  72.9)
+                    (5.4e23,  62.7)
+                    };
+                \addplot[
+                    color=frenchrose,
+                    mark=square,
+                    no markers,
+                    dashed,
+                    line width=1.3pt,
+                    ]
+                    coordinates {
+                    (1, 90)
+                    (1e25, 90)
+                    };
+        \end{groupplot}
+    \end{tikzpicture}
+    \begin{tikzpicture}
+        \pgfplotsset{footnotesize,samples=10}
+        \begin{groupplot}[
+            group style = {group size = 4 by 1, horizontal sep = 30pt},
+            width = 4cm,
+            height = 3.7cm]
+            \nextgroupplot[
+                align = center,
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=0.03, ymax=4,
+                xtick={1e20, 1e22, 1e24},
+                ytick={0.05, 0.2, 0.8, 3.0},
+                yticklabels={0.05, 0.2, 0.8, 3.2},
+                axis x line*=bottom,
+                axis y line*=left,
+                ylabel={Cross-entropy loss},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.25,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=1.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  0.183)
+                    (8.9e19,  0.214)
+                    (1.4e20,  0.214)
+                    (4.2e20,  0.196)
+                    (4.1e20,  0.176)
+                    (9.1e20,  0.148)
+                    (1.7e21,  0.14)
+                    (2.96e21, 0.183)
+                    (6.8e21,  0.139)
+                    (2.3e22,  0.14)
+                    (1.2e23,  0.087)
+                    (5.4e23,  0.073)
+                    };
+            \nextgroupplot[
+                align = center,
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=0.03, ymax=4,
+                xtick={1e20, 1e22, 1e24},
+                ytick={0.05, 0.2, 0.8, 3.0},
+                yticklabels={0.05, 0.2, 0.8, 3.2},
+                axis x line*=bottom,
+                axis y line*=left,
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.2)},anchor=north,font=\normalsize},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=1.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  3.279)
+                    (8.9e19,  2.057)
+                    (1.4e20,  1.98)
+                    (4.2e20,  1.9)
+                    (4.1e20,  1.06)
+                    (9.1e20,  0.63)
+                    (1.7e21,  0.83)
+                    (2.96e21, 0.664)
+                    (6.8e21,  0.454)
+                    (2.3e22,  0.51)
+                    (1.2e23,  0.307)
+                    (5.4e23,  0.369)
+                    };
+            \nextgroupplot[
+                align = center,
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=0.03, ymax=4,
+                xtick={1e20, 1e22, 1e24},
+                ytick={0.05, 0.2, 0.8, 3.0},
+                yticklabels={0.05, 0.2, 0.8, 3.2},
+                axis x line*=bottom,
+                axis y line*=left,
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=frenchblue,
+                    mark=*,
+                    mark size=1.5pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  3.66)
+                    (8.9e19,  3.23)
+                    (1.4e20,  2.777)
+                    (4.2e20,  2.211)
+                    (4.1e20,  2.102)
+                    (9.1e20,  1.793)
+                    (1.7e21,  1.514)
+                    (2.96e21, 1.586)
+                    (6.8e21,  1.205)
+                    (2.3e22,  1.211)
+                    (1.2e23,  0.877)
+                    (5.4e23,  0.849)
+                    };
+        \end{groupplot}
+    \end{tikzpicture}
+    \\ \vspace{5mm}
+    
+    \begin{tikzpicture}
+        \pgfplotsset{footnotesize,samples=10}
+        \begin{groupplot}[
+            group style = {group size = 4 by 1, horizontal sep = 30pt},
+            width = 4cm,
+            height = 3.7cm]
+            \nextgroupplot[
+                align = center,
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=0.03, ymax=4,
+                xtick={1e20, 1e22, 1e24},
+                ytick={0.05, 0.2, 0.8, 3.0},
+                yticklabels={0.05, 0.2, 0.8, 3.2},
+                axis x line*=bottom,
+                axis y line*=left,
+                ylabel={Neg.\ log probability},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.25,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=deepskyblue,
+                    mark=*,
+                    mark size=0.7pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  0.182)
+                    (8.9e19,  0.214)
+                    (1.4e20,  0.214)
+                    (4.2e20,  0.196)
+                    (4.1e20,  0.176)
+                    (9.1e20,  0.148)
+                    (1.7e21,  0.140)
+                    (2.96e21, 0.183)
+                    (6.8e21,  0.140)
+                    (2.3e22,  0.140)
+                    (1.2e23,  0.087)
+                    (5.4e23,  0.0737)
+                    };
+                \addplot[
+                    color=cinnamon,
+                    mark=*,
+                    mark size=0.7pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  0.176)
+                    (8.9e19,  0.175)
+                    (1.4e20,  0.177)
+                    (4.2e20,  0.185)
+                    (4.1e20,  0.154)
+                    (9.1e20,  0.164)
+                    (1.7e21,  0.178)
+                    (2.96e21, 0.208)
+                    (6.8e21,  0.165)
+                    (2.3e22,  0.144)
+                    (1.2e23,  0.169)
+                    (5.4e23,  0.249)
+                    };
+            \nextgroupplot[
+                align = center,
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=0.03, ymax=4,
+                xtick={1e20, 1e22, 1e24},
+                ytick={0.05, 0.2, 0.8, 3.0},
+                yticklabels={0.05, 0.2, 0.8, 3.2},
+                axis x line*=bottom,
+                axis y line*=left,
+                xlabel={Model scale (training FLOPs)},
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.25)},anchor=north,font=\normalsize},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=deepskyblue,
+                    mark=*,
+                    mark size=0.7pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  3.279)
+                    (8.9e19,  2.057)
+                    (1.4e20,  1.98)
+                    (4.2e20,  1.90)
+                    (4.1e20,  1.06)
+                    (9.1e20,  0.633)
+                    (1.7e21,  0.827)
+                    (2.96e21, 0.665)
+                    (6.8e21,  0.454)
+                    (2.3e22,  0.510)
+                    (1.2e23,  0.307)
+                    (5.4e23,  0.370)
+                    };
+                    \addlegendentry{Correct response}
+                \addplot[
+                    color=cinnamon,
+                    mark=*,
+                    mark size=0.7pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  1.85)
+                    (8.9e19,  1.71)
+                    (1.4e20,  0.90)
+                    (4.2e20,  0.94)
+                    (4.1e20,  1.156)
+                    (9.1e20,  1.185)
+                    (1.7e21,  0.919)
+                    (2.96e21, 0.889)
+                    (6.8e21,  0.872)
+                    (2.3e22,  0.437)
+                    (1.2e23,  1.137)
+                    (5.4e23,  0.702)
+                    };
+                    \addlegendentry{Incorrect response(s)}
+            \nextgroupplot[
+                align = center,
+                legend style={at={(0.5,1.1)},anchor=south
+                ,/tikz/column 2/.style={column sep=8pt,},draw=none},
+                legend columns=-1,
+                xmode=log,
+                ymode=log,
+                xmin=1e19, xmax=3e24,
+                ymin=0.03, ymax=4,
+                xtick={1e20, 1e22, 1e24},
+                ytick={0.05, 0.2, 0.8, 3.0},
+                yticklabels={0.05, 0.2, 0.8, 3.2},
+                axis x line*=bottom,
+                axis y line*=left,
+                grid style=dashed,
+                x label style={at={(axis description cs:0.5,-0.18)},anchor=north},
+                y label style={at={(axis description cs:-0.2,0.5)},anchor=south},
+                title style={at={(axis description cs:0.5,1.05)},font=\footnotesize},
+                xtick pos=bottom,
+                ytick pos=left,
+                ]
+                \addplot[
+                    color=deepskyblue,
+                    mark=*,
+                    mark size=0.7pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  3.67)
+                    (8.9e19,  3.23)
+                    (1.4e20,  2.77)
+                    (4.2e20,  2.21)
+                    (4.1e20,  2.10)
+                    (9.1e20,  1.79)
+                    (1.7e21,  1.5)
+                    (2.96e21, 1.59)
+                    (6.8e21,  1.205)
+                    (2.3e22,  1.21)
+                    (1.2e23,  0.88)
+                    (5.4e23,  0.85)
+                    };
+                \addplot[
+                    color=cinnamon,
+                    mark=*,
+                    mark size=0.7pt,
+                    line width=1pt,
+                    ]
+                    coordinates {
+                    (3.2e19,  3.72)
+                    (8.9e19,  3.44)
+                    (1.4e20,  2.82)
+                    (4.2e20,  2.25)
+                    (4.1e20,  2.23)
+                    (9.1e20,  1.98)
+                    (1.7e21,  1.62)
+                    (2.96e21, 1.69)
+                    (6.8e21,  1.515)
+                    (2.3e22,  1.437)
+                    (1.2e23,  1.747)
+                    (5.4e23,  1.93)
+                    };
+        \end{groupplot}
+    \end{tikzpicture}
+    \caption{
+    Adjacent plots for error rate, cross-entropy loss, and log probabilities of correct and incorrect responses on three classification tasks on BIG-Bench that we consider to demonstrate emergent abilities.
+    Logical arguments only has 32 samples, which may contribute to noise.
+    Error rate is (1 - accuracy).
+    } 
+    \label{fig:log-scaling-scoring}
+    \end{centering}
+\end{figure*}

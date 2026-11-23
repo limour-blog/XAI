@@ -1,0 +1,101 @@
+
+
+ 
+\section{Notations and Preliminaries}\label{sec:prelim}
+
+ We use $\mathbb{N}$ and $\mathbb{R}$ to denote the set of natural numbers and real numbers respectively. For any $n\in\mathbb{N}^+$, we define $[n]\triangleq \{1,2,\ldots,n\}$.  We define $\relu(x)\triangleq \max(x,0)$. For vector $x$, we use $x_{a:b}$ to denote the vector containing coordinates of $x$ from position $a$ to position $b$. For matrix $M$, we define $M_{a_1:b_1,a_2:b_2}$ to denote the submatrix by selecting rows from $a_1$ to $b_1$, columns from $a_2$ to $b_2$. We also use $a_1:$ to denote the subset of indices from $a_1$ to the end, $:b_1$ to denote the subset of indices from the beginning (1) to $b_1$ and $:$ to denote all indices.
+ Given two non-negative functions $f,g$, we say $f(n)= O(g(n))$ (resp. $f(n)= \Omega(g(n))$) iff there exists $C>0$, such that for all $n\ge 0$, $f(n)\le Cg(n)$ (resp. $f(n) \ge Cg(n)$).  We use $\poly(n)\triangleq \{T:\mathbb{N}\to\mathbb{N}\mid \exists k>0, T(n)= O(n^k)\}$ to denote the set of functions with at most polynomial growth rate.
+ 
+ We use $\phi(x) = \sum_{i=1}^{|x|} 2^{|x|-i}x_i$ to denote the value of binary number represented by binary string $x$.
+ We use $\bin_k(x)$ to denote the usual binary encoding of natural number $x$ using $k$ binary bits in the sense that $\phi(\bin_k(x)) = x$ and $\sbin_k(x)$ to denote the signed binary encoding, which is $2\bin_k(x)-(1,\ldots,1)$. For any $n\in\mathbb{N}^+$, we define $\softmax:\mathbb{R}^n\to\mathbb{R}^n$ as $(\softmax(x))_i = \exp(x_i)/\sum_{i=1}^n \exp(x_i)$ for any $x\in\mathbb{R}^n$ and $i\in [n]$. We use $\odot$ to denote the element-wise product of two vectors. We use $a\|b$ or $(a,b)$ to denote the concatenation of two vectors $a$ and $b$. 
+
+\subsection{Decoder-only Transformers}
+Given a vocabulary $\gV$ , a \emph{decoder-only} transformer with parameter $\theta$ and maximal input length $n_{\max}$ maps a sequence of input tokens $(x_1,\ldots,x_n)\in\gV^n$ to a probability distribution over $ \gV$ for all $n\le n_{\max}$, denoted by $p_\theta(\cdot\mid x_1,\ldots, x_n)$. We also define function $\transformer_\theta(x)$ by the token in $\gV$ that maximizes $p_\theta(\cdot\mid x_1,\ldots, x_n)$, that is, $\transformer_\theta(x_1,\ldots,x_n)\triangleq \argmax_{y\in\gV} p_\theta(y\mid x_1,\ldots, x_n)$.
+
+
+\paragraph{Next-token Generator:}  Given a vocabulary $\gV$, a next-token generator with parameter $\theta$ and maximal input length $n_{\max}$ is a mapping from $\cup_{n=1}^{n_{\max}} \gV^n$ to $\gV$. The main next-token generator we are interested in this work is decoder-only transformers, $\transformer_\theta(x_1,\ldots,x_n)$ where $x_i\in \gV$ for all $i\in[ n]$.  We also recursively define $\transformer^{i}_\theta(x_1,\ldots,x_n)\triangleq \transformer^{i-1}_\theta(x_1,\ldots,x_n, \transformer_\theta(x_1,\ldots,x_n))$, for every positive integer $i$ and $n$ satisfying that $i+n\le n_{\max}-1$ with the base case that $\transformer^{1}_\theta(x_1,\ldots,x_n)\triangleq\transformer_\theta(x_1,\ldots,x_n)$. In other words, for all $0\le i\le n_{\max} - n-1$, the output with $i$ steps of CoT is
+$x_{n+i+1}  = \transformer^{i+1}_\theta(x_1,\ldots,x_n) = \transformer_\theta(x_1,\ldots,x_n,x_{n+1},\ldots,x_{n+i})$.
+
+
+
+\paragraph{Transformer Architecture Overview:}
+The decoder-only transformer model we consider in this paper is very similar to GPT style architectures~\citep{radford2019language} and consists of four parts:  a token embedding layer ($\tokenembedding$), a position encoding layer ($\posencoding$), an output linear layer ($\transoutput$), and a stack of $L$ identical layers serving as the ``decoder'' where $L$ is also called the depth of the model. Each decoder layer has two sub-layers: a multi-head self-attention layer ($\Attn$) and a position-wise fully-connected feed-forward network ($\FF$). Each layer mentioned above has its own trainable parameters and is indexed by the layer name and the depth for attention and feedforward layers.
+ \footnote{We ignore the LayerNorm~\citep{ba2016layer} in the usual transformer architecture for simplicity. Our expressiveness analysis can extend to the transformers with LayerNorm with more careful treatment. See \Cref{appsec:layernorm} for discussion.}
+That is we can split the model parameter $\theta$ in the following way: $\theta = (\theta_\posencoding,\theta_\tokenembedding,\theta_\transoutput,\{\theta^{(l)}_\Attn,\theta^{(l)}_\FF\}_{l=0}^{L-1} )$, which are all trainable. (See formal definition in \Cref{alg:defi_transformer}). Throughout this paper, we use $d$ to denote the embedding size of a transformer.
+
+
+\paragraph{Self-Attention Mechanism:} Given attention parameter $\theta_\Attn = (W_Q,W_K,W_V,W_O)\in \mathbb{R}^{d\times d}\times \mathbb{R}^{d\times d}\times\mathbb{R}^{d\times d}\times \mathbb{R}^{d\times d}$, we define the Attention layer with mask for decoder-only transformer in \Cref{alg:defi_attn}. Note allowing multi-head attention will not change the class of problems solvable by constant layer decoder-only transformers as we can simulate 1 multi-head attention layer with any constantly many heads with multiple single-head attention layers. Thus for simplicity of presentation, we do not include multi-head attention in the definition below.
+
+\begin{algorithm}
+\caption{Causal Self-Attention, $\Attn$}\label{alg:defi_attn}
+\begin{algorithmic}[1]
+\Require  Parameter $\theta_\Attn = (W_Q,W_K,W_V,W_O)$, Input embedding $h= (h_1,\ldots, h_n)\in\mathbb{R}^{nd}$.
+\Ensure Output embedding $h'= (h'_1,\ldots, h'_n) \triangleq \Attn_{\theta_\Attn}(h_1,\ldots, h_n)$.
+\State $q_i \triangleq W_Q  h_i, k_i \triangleq W_K h_i, v_i \triangleq W_V h_i, \forall i\in[n]$
+\State $s_i \triangleq \softmax(\inner{q_i}{k_1},\ldots,\inner{q_i}{k_i}) \| (0,\ldots, 0) $. 
+\State $h'_i \triangleq W_O \sum_{j=1}^n (s_i)_j v_j$.
+\end{algorithmic}
+\end{algorithm}
+
+
+
+\paragraph{Feed-Forward Network:} Given the parameter of fully-connected feedforward network layer $\theta_\FF = (W_1,b_1,W_2,b_2)\in \mathbb{R}^{d\times d}\times \mathbb{R}^d \times \mathbb{R}^{d\times d}\times \mathbb{R}^d$, we define the fully-connected feedforward layer $\FF_{\theta_\FF}:\mathbb{R}^d\to \mathbb{R}^d$ as $\FF_{\theta_{\FF}}(h) \triangleq W_2\relu(W_1 h + b_1) + b_2$.
+
+\paragraph{Token Embedding:} Given the parameter of token embedding layer $\theta_\tokenembedding \in \mathbb{R}^{d \times|\gV|}$, we define the token embedding layer by viewing $\theta_\tokenembedding$ as a mapping from $\gV $ to $ \mathbb{R}^d$, that is, for all $x\in \gV$, the token embedding is $\theta_\tokenembedding(x)$. 
+
+\paragraph{Position Encoding:} Given the parameter of position encoding layer $\theta_\posencoding \in \mathbb{R}^{d \times n_{\max}}$, we define the token embedding layer by viewing $\theta_\posencoding$ as a mapping from $[n_{\max}] $ to $ \mathbb{R}^d$ that is, for all $n\in [n_{\max}]$, the position embedding is as $\theta_\posencoding(n)$. 
+
+\paragraph{Output Layer:} Given the parameter of output layer $\theta_\transoutput  \in \mathbb{R}^{|\gV| \times  d}$, we define the output layer $\transoutput_{\theta_\transoutput}:\mathbb{R}^d \to \gV$ as $\transoutput_{\theta_\transoutput}(h)\triangleq \softmax(\theta_{\transoutput}h)$ for all $h\in \mathbb{R}^d$. 
+
+
+
+
+
+
+\begin{algorithm}
+\caption{Decoder-only Transformer, $\protect\transformer_\theta$ and $p_\theta$}\label{alg:defi_transformer}
+\begin{algorithmic}[1]
+
+\Require   Transformer parameter $\theta = (\theta_\posencoding,\theta_\tokenembedding,\theta_\transoutput,\{\theta^{(l)}_\Attn,\theta^{(l)}_\FF\}_{l=0}^{L-1} )$ and input tokens $x= (x_1,\ldots, x_n)\in\gV^n$.
+\Ensure Output distribution $p_\theta(\cdot \mid x_1,\ldots, x_i)$ for all $i\in[n]$ and output token $\transformer_\theta(x)$.
+\State $h^{(0)}_i \gets \theta_\tokenembedding(x_i) + \theta_\posencoding(i), \forall i \in [n]$
+\For{$l = 0,\ldots,L-1$}
+\State	$( h^{(l+0.5)}_1,\ldots, h^{(l+0.5)}_n) \gets (h^{(l)}_1,\ldots, h^{(l)}_n) +\Attn_{\theta^{(l)}_\Attn}(h^{(l)}_1,\ldots, h^{(l)}_n) $
+\State  $ h^{(l+1)}_i \gets  h^{(l+0.5)}_i + \FF_{\theta^{(l)}_\FF}(h^{(l+0.5)}_i)$, $\forall i \in [n]$
+\EndFor
+\State $p_\theta(\cdot\mid x_1,\ldots,x_i) \gets  \transoutput_{\theta_\transoutput}(h^{(L)}_i), \forall i \in [n]$
+\State $\transformer_\theta(x)\gets \argmax_{y} p_\theta(y\mid x_1,\ldots,x_n)$.
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Circuit Complexity}\label{subsec:circuit}
+ 
+\paragraph{Problem.} In this paper we consider the following notion of problems: given a sequence of input tokens, output a token as the answer. Mathematically, given a vocabulary $\gV$, we call a mapping $\gL:\cup_{k\in\mathbb{N}^+}\gV^k\to\gV$ a \emph{problem}. If the correct answer is always $0$ or $1$, we call $\gL$ a decision problem. In circuit complexity, such $\gL$ is also called a \emph{language}.  
+
+
+Though the standard definition of circuit complexity only deals with binary strings, given any finite vocabulary $\gV$, we can always replace each token in $\gV$ by its binary representation, and the length of the input only blows up by a constant factor. Therefore we can extend existing complexity classes listed to arbitrary finite vocabulary naturally. 
+
+\paragraph{$\P$.} The class $\P$ contains all problems solvable by a deterministic Turing machine in polynomial time. 
+%Formally, a problem $L$ is in $\P$ if and only if there exists a deterministic Turing machine $M$ and a polynomial $p$ such that $M$ outputs $L(x)$ in time $p(n)$, for all inputs $x$ of length $n$.
+
+
+
+
+\paragraph{Boolean Circuit.} A Boolean circuit over $n$ variables is a directed acyclic graph where nodes are $\AND$, $\OR$, or $\NOT$ gates. The gates with in-degree 0 are the inputs, which are assigned one of the $n$ boolean variables. Given the inputs, the circuit computes the value of each non-input gate based on the value of the incoming gates and outputs a number at the output gate.
+
+\paragraph{$\SIZE[T(n)]$.} Given any function $T$, $\SIZE[T(n)]$ denotes the class of problems that can be solved by boolean circuits with $O(T(n))$ gates when the input length is $n$.  Formally, a problem $\gL$ is in $\SIZE[T(n)]$ if and only if there exists a sequence of circuits $\{C_n\}$ such that each circuit $C_n$ has $n$ inputs and 1 output, the size of each circuit $C_n$ is at most $O(T(n))$, and for all strings $x$, $x$ is in $L$ if and only if $C_{|x|}(x) = 1$.
+
+\paragraph{$\Ppoly$.} We define the class $\Ppoly$ as the set of problems that can be solved by a family of polynomial-size circuits, that is, $\Ppoly\triangleq \cup_{k\in\mathbb{N}^+} \SIZE[n^k]$. Since any Turing Machine with time bound $T(n)$ can be simulated by a circuit of size $T(n)\log T(n)$~\citep{pippenger1979relations}, we know that $\P\subseteq \Ppoly$. 
+
+%\paragraph{$\Ppoly$:} \tnote{add an intuitive explanation---maybe something like this is similar to P and considered as all the problem we can solve}The class $\Ppoly$ is the set of problems that can be solved by a family of polynomial-size circuits. Formally, a language $L$ is in $\Ppoly$ if and only if there exists a polynomial $p(n)$ and a sequence of circuits $\{C_n\}$ such that each circuit $C_n$ has $n$ inputs and 1 output, the size of each circuit $C_n$ is at most $p(n)$, and for all strings $x$, $x$ is in $L$ if and only if $C_{|x|}(x) = 1$. 
+
+\paragraph{$\NC,\AC$, and $\TC$.} The class $\NC$ contains all problems that can be solved in a small \textbf{parallel} runtime---polylogarithmic in input length---and with a polynomial number of processors. Formally, for a positive integer $k$,  a problem $\gL$ is in $\NC^k$ if and only if there exists a polynomial $p(n)$ and a  family of circuits $\{C_n\}$ such that each circuit $C_n$ has $n$ inputs and 1 output, the fan-in of the gates is at most $2$, the size of each circuit $C_n$ is at most $p(n)$, the depth of each circuit $C_n$ is $O((\log n)^k)$, and for all strings $x$, $x$ is in $\L$ if and only if $C_{|x|}(x) = 1$. Finally we define $\NC=\cup_{k\in\mathbb{N}} \NC^k$.
+The class $\AC^k$ is defined almost the same as $\NC^k$ for each $k\in\mathbb{N}^+$, except the $\AND$ and $\OR$ gates in $\AC^k$ allow unbounded fan-in. 
+%\tnote{some explanation here as before.. maybe say these are parallel computers where you have unbounded numbe}
+The class $\TC^k$ allows a more powerful type of gate, $\MAJORITY$, compared to $\AC^k$. $\MAJORITY$ gate can have unbounded fan-in and is defined as 
+	$\MAJORITY\left(x_{1},\dots ,x_{n}\right)=\lfloor {\frac {1}{2}}+{\frac {\left(\sum _{i=1}^{n}x_{i}\right)-1/2}{n}}\rfloor $.
+
+
+
+
+It holds that $\NC^i\subseteq \AC^i\subseteq \TC^i\subseteq \NC^{i+1}$ for all natural number $i$. Therefore $\NC=\AC=\TC$, which all stands for the problem class that can be solved in polylogarithmic time with polynomial parallel processors.

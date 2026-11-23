@@ -1,0 +1,6 @@
+ 
+\section{Conclusion}\label{sec:conclusion}
+ 
+We study the capability of CoT for decoder-only transformers through the lens of expressiveness. We adopt the language of circuit complexity and define a new complexity class $\Cot[T(n)][d(n)][s(n)][e(n)]$ which corresponds to a problem class solvable by constant-depth, constant-precision decoder-only transformers with  $O(T(n))$ steps of CoT, $O(d(n))$ embedding size and floating-point numbers with $O(e(n))$ bits of exponents and $O(s(n))$ bits of significand. Our theory suggests that increasing the length of CoT can drastically make transformers more expressive. We also empirically verify our theory in four arithmetic problems. We find that for those three inherently serial problems, transformers can only express the groundtruth function by using CoT. 
+
+%\paragraph{Limitation:} Our theoretic study on expressiveness does not explain why LLMs can actually learn to generate meaningful intermediate steps from standard pretraining. For experiments, though we use \hint\ to remove the statistical advantage that \cot\ has over \base\ setting, we cannot distinguish whether the low accuracy of \hint\ comes from the optimization side or the expressiveness side. However, it could be reasonably argued that only the expressiveness that can be leveraged by conventional gradient-based optimization algorithms truly matters.

@@ -1,0 +1,61 @@
+\clearpage
+\section{BIG-Bench analysis} \label{app:metric_dependence}
+
+\subsection{Cross-entropy loss analysis}\label{subec:x_ent_analysis}
+
+Here we study how scaling curves may appear differently depending on the evaluation metric used to measure performance.
+We will focus on the six few-shot prompted BIG-Bench tasks that we consider emergent for LaMDA models.
+Three of these tasks are generative and use Exact Match (EM) or BLEU \citep{papineni2002bleu} as the evaluation metric.
+The other three tasks are classification and use accuracy (acc) as the evaluation metric.
+
+In the scaling curves for these tasks, peformance in EM/BLEU/acc is close to random for small models (${\leq}10^{22}$ FLOPs / ${\leq}$27B params).
+We will compare these scaling curves against alternative plots that have a different $y$-axis measured by cross-entropy loss.
+Cross-entropy loss differs from EM/BLEU/acc in that it captures improvements in performance (the predicted distribution getting closer to ground truth) even when the EM/BLEU/acc is random.
+For example, if two examples are both wrong as measured by EM/BLEU/acc, one example may be closer to the ground truth in terms of probabilities, and this information is captured by the cross-entropy loss.
+
+These plots are expected to look like one of the following:
+\begin{itemize}
+    \item Outcome 1: For the model scales where EM/BLEU/acc is random, cross-entropy loss also does not improve as scale increases. This outcome implies that for these scales, the model truly does not get any better at the tasks.
+    \item Outcome 2: For the model scales where EM/BLEU/acc is random, cross-entropy loss does improve. This outcome implies that the models do get better at the task, but these improvements are not reflected in the downstream metric of interest. The broader implication is that scaling small models improves the models in a way that is not reflected in EM/BLEU/Acc, and that there is some critical model scale where these improvements enable the downstream metric to increase to above random as an emergent ability.
+\end{itemize}
+
+
+We find that all six BIG-Bench tasks fall under Outcome 2, and detail this analysis below.
+Overall, the conclusion from this analysis is that small models do improve in some ways that downstream metrics that EM/BLEU/Acc do not capture. However, these tasks are still considered emergent, and this analysis does not provide any straightforward indicators of how to predict such emergent behaviors. 
+
+\input{log-scaling-generative}
+
+\subsubsection{Generative tasks}
+
+\cref{fig:log-scaling-generative} shows the cross-entropy loss on the three generative BIG-Bench tasks (modified arithmetic, IPA transliterate, and word unscramble) alongside the downstream evaluation metrics used in \cref{fig:intrinsic-emergent}. 
+For all three tasks, notice that while the error rate is nearly 100\% for small models (${\leq}10^{22}$ FLOPs / ${\leq}$27B params), the cross-entropy loss does actually improve for these model sizes.
+At the point of emergence as measured by error rate, we also see an ``elbow'' in performance improvement for cross-entropy loss.
+
+\subsubsection{Classification tasks}
+
+\cref{fig:log-scaling-scoring} (middle row) shows the cross-entropy loss of the three classification BIG-Bench tasks.
+Similar to the generative tasks, when the error rate is close to random, cross-entropy loss consistently still improves for models trained with more compute. 
+This again shows that performance as computed by accuracy can mask consistent improvements in the likelihood of the target sequences.
+
+We also perform an additional analysis of the multiple choice emergent tasks in \cref{fig:log-scaling-scoring} (bottom row), which shows the log probabilities of the correct response and incorrect response(s).
+We find that the cross-entropy loss decreases for both the correct and incorrect responses in the three emergent multiple choice tasks.
+Counterintuitively, both log-probabilities can decrease in tandem even when the probability across all available multiple choice responses is normalized.
+The reason is that larger models produce less-extreme probabilities (i.e., values approaching 0 or 1) and therefore the average log-probabilities have fewer extremely small values.
+However, we note that for each of these three tasks, that the average log-probability of the correct and incorrect responses eventually deviates at a certain scale, during which performance on the task increases substantially.
+
+\input{log-scaling-scoring}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

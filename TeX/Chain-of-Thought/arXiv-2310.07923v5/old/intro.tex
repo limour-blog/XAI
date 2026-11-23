@@ -1,0 +1,18 @@
+First, as a generic result, we find that power of transformers with $t(n)$ decoding steps is sandwiched between Turing machines with $t(n)$ time and Turing machines with $t(n) + \log n$ time:
+\begin{equation*}
+    \TIME(t(n)) \subseteq \CoT(t(n)) \subseteq \SPACE(t(n) + \log n) .
+\end{equation*}
+\will{mention quadratic upper bound here too?}
+This shows that CoT does not just enable transformers to solve dynamic programming \citep{feng2023revealing}, but also simulate a Turing machine up to a bounded number of steps. On the other hand, it also establishes limits on the power of transformers with CoT as a function of the number of decoding steps.
+
+We then explore how these results apply for two specific classes of interest: transformers with a linear number of decoding steps and transformers with a logarithmic number of decoding steps.
+
+Having a linear number of CoT steps adds power.
+For example, transformers with an $\O(n)$ scratchpad can recognize all regular languages, whereas transformers without a scratchpad cannot.\footnote{The negative result holds conditionally assuming $\TC^0 \neq \NC^1$. This follows because the word problem for the $5$-permutation group $S_5$ is both regular and $\NC^1$-complete.}
+Thus, a scratchpad is not just beneficial for guiding the transformer's reasoning, but actually provides additional computational power to the model.
+
+On the other hand, transformers with a logarithmic number of decoding steps obey similar limitations to standard transformer decoders: that is, they are upper bounded within uniform $\TC^0$. Transformers with $\O(\log n)$ CoT steps cannot solve directed graph connectivity or linear equalities, like transformers without CoT. On the other hand, we are able to show that transformers with $\O(n)$ CoT steps cannot solve problems beyond the context-sensitive languages, but it is open whether they can solve directed graph connectivity or linear equalities.
+
+\will{Should we connect this to RLHF here? One benefit of RL is that the reward from the final answer conditions on the intermediate generation, unlike in standard pretraining.}
+
+\will{This might be an argument to frame everything in terms of intermediate generation instead of chain-of-thought, because that's more generally what we're talking about. Chain-of-thought is a way to use intermediate generation at inference time, and RLHF is a way to train in a model with intermediate generation.}

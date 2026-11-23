@@ -1,0 +1,105 @@
+\section{Additional Details: Transformer Components}
+\label{sec:modules}
+
+This section recalls the definition from \citet{merrill2023logic} for the components of the transformer layer.
+We assume a pre-norm \citep{xiong2020on} parameterization of the transformer for concreteness and because this is more standard in newer transformers.
+However, the results would also hold with the original post-norm \citep{vaswani2017attention}.
+
+\subsection{Transformer Embeddings} \label{sec:embedding}
+
+For each position $1 \leq i \leq n$,
+the transformer embedding function represents token $\sigma_i \in \Sigma$ and its position $i$ with a vector.
+Let $\mathbf V$ be an embedding matrix of size $\abs{\Sigma} \times m$ where each row represents the embedding for some $\sigma$.
+Let $f : \mathbb N \to \mathbb D_p^m$ be computable in time $\O(\log n)$.
+Then,
+\begin{equation*}
+    \mathbf \phi(\sigma_i, i) = \mathbf v_{\sigma_i} + f(i) .
+\end{equation*}
+
+\subsection{Self Attention} \label{sec:self-attention}
+
+The two components of the self attention block are $s$, the similarity function, and $v$, the value function.
+Let $\mathbf h_i$ be the hidden state at the previous layer and $\bar {\mathbf h}_i = \lnorm(\mathbf h_i)$.
+Then, the similarity function first computes queries and keys, and then takes the scaled dot-product between them:
+\begin{align*}
+    s(\mathbf h_i, \mathbf h_j) &= \exp \left( \frac{\mathbf q_i^\top \mathbf k_i}{\sqrt{m/h}} \right)
+    , \quad\quad \textrm{where} \;
+    \begin{array}{l}
+        \mathbf q_i = \mathbf W_q \bar {\mathbf h}_i + \mathbf b_q \\
+        \mathbf k_i = \mathbf W_k \bar {\mathbf h}_i + \mathbf b_k
+    \end{array} .
+\end{align*}
+Then the value function is defined $v(\mathbf h_i) = \mathbf W_h \bar {\mathbf h}_i + \mathbf b_h$.
+
+\subsection{Activation Block} \label{sec:feedforward}
+
+The activation function $f$ encapsulates the aggregation of the attention head outputs and the feedforward subnetwork of the transformer. $f$ takes as input attention head outputs $\mathbf a_{i,1}, \ldots, \mathbf a_{i,h} \in \mathbb D_p^{m/h}$ and the previous layer value $\mathbf h_i$.
+
+The first part of the activation block simulates the pooling part of the self-attention sublayer.
+The head outputs are first concatenated to form a vector $\mathbf a_i$, which is then passed through an affine transformation $(\mathbf W_o, \mathbf b_o) : \mathbb D_p^m \to \mathbb D_p^m$ followed by residual connections to form the sublayer output $\mathbf o_i \in \mathbb D_p^m$:
+\begin{equation*}
+    \mathbf o_i = \mathbf W_o \mathbf a_i + \mathbf b_o + \mathbf h_i .
+\end{equation*}
+
+The second part of the activation block first applies layer-norm and then simulates the feedforward subnetwork to compute the next layer vector $\mathbf h'_i$.
+Let $\bar{\mathbf o}_i = \lnorm(\mathbf o_i)$.
+Let $\sigma$ be a nonlinearity computable in linear time on its input (in the most standard transformer, ReLU). Then, for affine transformations $(\mathbf W_1, \mathbf b_1) : \mathbb D_p^m \to \mathbb D_p^w$ and $(\mathbf W_2, \mathbf b_2) : \mathbb D_p^w \to \mathbb D_p^m$, the feedforward subnetwork can be defined:
+\begin{align*}
+    \mathbf h'_i = \mathbf W_2 \sigma(\mathbf W_1 \bar{\mathbf o}_i + \mathbf b_1) + \mathbf b_2 + \mathbf o_i .
+\end{align*}
+
+
+%%%%%%%%%%%%%%%%%%%%%
+\section{Additional Details: Layer-Norm Hash} \label{sec:lnorm-proof}
+
+\lnormcanonical*
+
+\begin{proof}
+    Let $\mathbf v_q = \langle q/i, 1/i, -q/i, -1/i\rangle$.
+    % and $\mathbf v_k = \langle k/j, 1/j, -k/j, -1/j\rangle$.
+    % $\phi_q$ and $\phi_k$ are constructed with mean $0$,
+    $\mathbf v_q$ is constructed with mean $0$, so layer-norm reduces to $2$-normalization. Thus,
+    \begin{align*}
+        \hash(q/i)
+        &= \mathbf v_q / \norm{\mathbf v_q} \\
+        &= \mathbf v_q \cdot \frac{n}{\sqrt{2q^2 + 2}} \\
+        &= \frac{1}{\sqrt{2q^2 + 2}} \langle q, 1, -q, -1 \rangle . \qedhere
+    \end{align*}
+\end{proof}
+% 
+% By symmetry, we also have 
+% \begin{equation*}
+%     \hash(k/j) =  \frac{1}{\sqrt{2k^2 + 2}} \langle k, 1, -k, -1 \rangle .
+% \end{equation*}
+% Notably, these unit-norm vectors only depend on $q$ and $k$, not $i$ and $j$. We turn to considering their inner product $\hash(q/i) \cdot \hash(k/j)$:
+
+\lnormunique*
+
+\begin{proof}
+    Following the notation and derivation from \Cref{lem:lnorm-canonical}, we have
+    \begin{align*}
+        \hash(q/n) \cdot \hash(k/m)
+        &= \frac{2qk + 2}{\sqrt{(2q^2 + 2)(2k^2 + 2)}} \\
+        &= \frac{qk + 1}{\sqrt{(q^2 + 1)(k^2 + 1)}} .
+    \end{align*}
+    The inner product of unit-norm vectors is maximized at $1$.
+    In this case, we show that it achieves $1$ only when $q = k$, meaning that is the unique maximum:
+    \begin{align*}
+        1 &= \frac{qk + 1}{\sqrt{(q^2 + 1)(k^2 + 1)}} \\
+        (qk + 1)^2 &= (q^2 + 1)(k^2 + 1) \\
+        (qk)^2 + 2qk + 1 &= (qk)^2 + q^2 + k^2 + 1 \\
+        2qk &= q^2 + k^2 \\
+        0 &= (q - k)^2 .
+    \end{align*}
+    We conclude that, for any $i,j$, $\hash(q/i) \cdot \hash(k/j)$ is maximized if and only if $q = k$.
+\end{proof}
+
+
+%%%%%%%%%%%%%%%%%%%%%%
+\section{Additional Details: Start-Separable Position Encodings} \label{sec:start-separable}
+
+\startseparable*
+
+\begin{proof}
+If the positional encoding is start-separable, we can construct a transformer decoder that attends uniformly over the previous tokens and set the value to be $1$ at the initial token and $0$ otherwise. The output of this head will be $1/i$. We can then compose this transformer with a transformer that uses $1/i$ positional encoding to recognize $L$, which exists as a premise.
+\end{proof}
