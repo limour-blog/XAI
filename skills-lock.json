@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "progressive-paper-split": {
+      "source": "Limour-dev/pi-skills",
+      "commit": "09cfed3ae59ee43ec3907c6e74d5c5c97b0375e3",
+      "sourceType": "github",
+      "skillPath": "progressive-paper-split/SKILL.md",
+      "computedHash": "752355ddd621b05f28245190f1749968bd1902fdf0cbfcc01159f33f085160bc"
+    }
+  }
+}
